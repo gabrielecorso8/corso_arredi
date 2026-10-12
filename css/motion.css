@@ -648,37 +648,15 @@ html {
     to   { opacity: 1; transform: none; }
   }
 
-  /* --- 3. il respiro ------------------------------------------------- */
+  /* --- 3. le fotografie restano alla loro risoluzione --------------- */
 
-  /* Ventotto secondi per il 3,5% di scala: circa un decimo di pixel al
-     fotogramma. Non si vede muoversi, si vede che è viva — è la
-     differenza fra una fotografia e una finestra.
-
-     Vale per la fotografia sola, quella che resta se la vetrina non
-     parte: figlia diretta di .hero__media, quindi il selettore la
-     distingue senza bisogno di una classe in più. */
-  .hero__media > img {
-    animation: ca-respiro 28s ease-in-out infinite alternate;
-    animation-delay: var(--apertura);
-    transform-origin: 60% 50%;
-  }
-  @keyframes ca-respiro {
-    from { transform: scale(1); }
-    to   { transform: scale(1.035); }
-  }
-
-  /* Nella vetrina ogni fotografia vive poco più di sette secondi — sei di
-     permanenza più la dissolvenza — e il respiro dura quanto lei. Non
-     torna indietro: quando la successiva la sostituisce, questa si stava
-     ancora avvicinando. È la ragione per cui il movimento non si nota mai
-     fermarsi. */
+  /* Le immagini dello Studio sono da 1086 px sul lato lungo. Il vecchio
+     avvicinamento del 5% le ingrandiva ancora dentro un hero full-screen,
+     rendendo evidente la morbidezza. Manteniamo la dissolvenza fra scatti,
+     ma senza zoom: l'immagine resta ferma e più nitida. */
   .hero .vetrina__foto img {
-    animation: ca-respiro-hero 7400ms linear both;
-    transform-origin: 55% 50%;
-  }
-  @keyframes ca-respiro-hero {
-    from { transform: scale(1); }
-    to   { transform: scale(1.05); }
+    animation: none;
+    transform: none;
   }
 
   /* --- 4. il congedo allo scorrimento -------------------------------- */

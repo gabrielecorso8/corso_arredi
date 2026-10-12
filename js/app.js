@@ -117,7 +117,10 @@
              quasi sempre: fermarsi al suo passaggio significherebbe
              restare fermi. */
           pausaSuHover: false,
-          sizes: '(max-width: 1100px) 100vw, 58vw',
+          /* La foto riempie davvero l'intera schermata: indicare una
+             larghezza minore faceva scegliere al browser una variante
+             troppo piccola per l'hero. */
+          sizes: '100vw',
           riserva: { image: h.image, imageAlt: h.imageAlt }
         })
       : img(h.image, h.imageAlt, true);
