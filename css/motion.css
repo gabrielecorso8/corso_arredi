@@ -650,7 +650,7 @@ html {
 
   /* --- 3. le fotografie restano alla loro risoluzione --------------- */
 
-  /* Le immagini dello Studio sono da 1086 px sul lato lungo. Il vecchio
+  /* Le immagini dello Studio misurano 1086 × 1448 px. Il vecchio
      avvicinamento del 5% le ingrandiva ancora dentro un hero full-screen,
      rendendo evidente la morbidezza. Manteniamo la dissolvenza fra scatti,
      ma senza zoom: l'immagine resta ferma e più nitida. */
