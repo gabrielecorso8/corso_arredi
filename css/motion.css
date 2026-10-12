@@ -1,0 +1,763 @@
+/* ==========================================================================
+   CORSO ARREDI — MOTION
+   --------------------------------------------------------------------------
+   DEROGA DICHIARATA AL DESIGN SYSTEM.
+
+   DESIGN.md dichiara profilo di motion "none" e vieta esplicitamente reveal
+   allo scroll e parallax. Questo file introduce movimento su richiesta del
+   committente, tenendosi al livello più basso possibile:
+
+   - solo dissolvenza e traslazioni sotto i 14px, mai scala, mai rotazione
+   - curve lineari o ease-out morbide, mai rimbalzi, mai elastico
+   - durate 150–320ms, nell'ordine di grandezza già ammesso dal sistema
+   - nessun parallax, nessun elemento che si muove a velocità diversa
+   - nessuna libreria: solo API native del browser
+
+   È tutto progressive enhancement. Dove le API non ci sono, il sito si
+   comporta esattamente come prima: nessun fallback, nessun degrado.
+   Per tornare al comportamento statico basta togliere questo foglio di
+   stile dall'HTML: niente altro dipende da lui.
+   ========================================================================== */
+
+:root {
+  /* Durate. Restano nell'ordine di grandezza dei 150ms del design system. */
+  --motion-fast: 120ms;
+  --motion-base: 190ms;
+  --motion-slow: 260ms;
+  --motion-slower: 340ms;
+
+  /* Curve. Nessun overshoot: le due curve non superano mai il valore finale. */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.25, 1);
+
+  /* --------------------------------------------------------------------
+     I TEMPI DEL CAMBIO PAGINA, SEPARATI DAGLI ALTRI
+
+     Un passaggio fra due pagine intere ha bisogno di più tempo di un
+     bordo che cambia colore: sotto i 250ms complessivi l'occhio non
+     legge un movimento, legge uno scatto. Erano 120 + 190 e infatti si
+     sentivano secchi.
+
+     La sequenza è una staffetta e i tre numeri vanno letti insieme:
+     la pagina vecchia esce in 140ms, la nuova comincia a 120ms e ci mette
+     280ms. Le due si accavallano per 20ms soli — quanto basta perché non
+     ci sia un buco, troppo poco perché si leggano sovrapposte.
+     -------------------------------------------------------------------- */
+  --pt-out: 140ms;
+  --pt-delay: 120ms;
+  --pt-in: 280ms;
+
+  /* Più morbida delle altre: parte piano, arriva piano. Su un movimento
+     lungo quanto una pagina si sente, su uno da 150ms no. */
+  --pt-ease: cubic-bezier(0.32, 0.72, 0.22, 1);
+}
+
+/* ==========================================================================
+   1. TRANSIZIONE TRA PAGINE — View Transitions API
+
+   Il disegno del movimento sta qui; a eseguirlo è js/navigazione.js, che
+   cambia il contenuto della pagina senza cambiare documento. È la
+   correzione di un difetto che non riuscivo a chiudere altrimenti: la
+   transizione fra due documenti dipende da quanto ci mette ad arrivare
+   quello nuovo, e quando ci metteva troppo il browser rinunciava senza
+   dirlo. Da fuori era "a volte funziona, spesso no".
+
+   La regola qui sotto resta come rete di sicurezza: se il JavaScript non
+   parte, il browser prova comunque ad animare da solo. Quando il
+   navigatore c'è, non entra mai in gioco perché il documento non cambia.
+   ========================================================================== */
+
+@view-transition { navigation: auto; }
+
+/* --------------------------------------------------------------------------
+   Comportamento di base, valido dove i tipi non sono supportati o non si
+   applicano: dissolvenza incrociata con una lieve risalita.
+   -------------------------------------------------------------------------- */
+
+/* LE DUE PAGINE NON SONO MAI ENTRAMBE OPACHE
+
+   Prima la vecchia si dissolveva in 190ms e la nuova compariva in 260ms,
+   partendo insieme: per circa metà del passaggio erano visibili tutte e
+   due, sovrapposte. Su fondi chiari il testo dell'una si leggeva
+   attraverso l'altra.
+
+   Adesso è una staffetta: la vecchia esce in fretta, la nuova comincia
+   quando quella se n'è andata. "both" tiene la nuova invisibile durante
+   l'attesa, altrimenti apparirebbe subito e l'attesa non servirebbe. */
+
+@keyframes ca-out-fade   { to   { opacity: 0; } }
+@keyframes ca-in-fade    { from { opacity: 0; transform: translateY(10px); } }
+
+::view-transition-old(root) {
+  animation: ca-out-fade var(--pt-out) linear both;
+}
+::view-transition-new(root) {
+  animation: ca-in-fade var(--pt-in) var(--pt-delay) var(--pt-ease) both;
+}
+
+/* La barra di navigazione e il footer sono gli elementi identici fra una
+   pagina e l'altra. Con il navigatore interno non vengono nemmeno toccati:
+   restano gli stessi nodi, e il nome serve a tenerli fuori dalla
+   fotografia del corpo pagina — se no scorrerebbero via insieme a lui,
+   loro che sono fissi.
+
+   Prima qui c'era animation: none. Sembrava la scelta giusta — se non si
+   muove, non disturba — ma produceva l'effetto opposto: la nav vecchia
+   restava immobile per tutta la durata del passaggio mentre il resto si
+   muoveva, e poi scattava. Con la nav trasparente sopra l'hero e opaca
+   sulle pagine interne, lo scatto era ben visibile.
+
+   Adesso fanno una dissolvenza rapida, più breve del corpo pagina: si
+   scambiano prima che l'occhio le cerchi. */
+.nav    { view-transition-name: ca-nav; }
+.footer { view-transition-name: ca-footer; }
+
+::view-transition-group(ca-nav),
+::view-transition-group(ca-footer) { animation-duration: var(--pt-out); }
+::view-transition-old(ca-nav),
+::view-transition-new(ca-nav),
+::view-transition-old(ca-footer),
+::view-transition-new(ca-footer) {
+  animation-duration: var(--pt-out);
+  animation-timing-function: linear;
+  mix-blend-mode: normal;
+}
+
+/* --------------------------------------------------------------------------
+   TIPI DI TRANSIZIONE
+   I tipi vengono assegnati da js/transitions.js in base al rapporto fra la
+   pagina di partenza e quella di arrivo. Qui c'è solo il disegno.
+
+   Regola comune a tutti: nessun rimbalzo, nessuna rotazione, scale sempre
+   fra 0.97 e 1.03. Il movimento accompagna, non si fa guardare.
+   -------------------------------------------------------------------------- */
+
+/* --- ca-in : dalla home verso una pagina interna. Si entra dentro. ------- */
+@keyframes ca-in-old  { to   { opacity: 0; transform: scale(1.03); } }
+@keyframes ca-in-new  { from { opacity: 0; transform: scale(0.97) translateY(16px); } }
+
+html:active-view-transition-type(ca-in) {
+  &::view-transition-old(root) {
+    animation: ca-in-old var(--pt-out) var(--ease-in-out) both;
+  }
+  &::view-transition-new(root) {
+    animation: ca-in-new var(--pt-in) var(--pt-delay) var(--pt-ease) both;
+  }
+}
+
+/* --- ca-out : da una pagina interna verso la home. Si esce, all'indietro. */
+@keyframes ca-out-old { to   { opacity: 0; transform: scale(0.97); } }
+@keyframes ca-out-new { from { opacity: 0; transform: scale(1.03); } }
+
+html:active-view-transition-type(ca-out) {
+  &::view-transition-old(root) {
+    animation: ca-out-old var(--pt-out) var(--ease-in-out) both;
+  }
+  &::view-transition-new(root) {
+    animation: ca-out-new var(--pt-in) var(--pt-delay) var(--pt-ease) both;
+  }
+}
+
+/* --- ca-side : fra pagine dello stesso livello. Si scorre di lato, nel
+       verso in cui sono ordinate nel menu. --------------------------------- */
+@keyframes ca-next-old { to   { opacity: 0; transform: translateX(-4%); } }
+@keyframes ca-next-new { from { opacity: 0; transform: translateX(5%); } }
+@keyframes ca-prev-old { to   { opacity: 0; transform: translateX(4%); } }
+@keyframes ca-prev-new { from { opacity: 0; transform: translateX(-5%); } }
+
+html:active-view-transition-type(ca-side-next) {
+  &::view-transition-old(root) {
+    animation: ca-next-old var(--pt-out) var(--ease-in-out) both;
+  }
+  &::view-transition-new(root) {
+    animation: ca-next-new var(--pt-in) var(--pt-delay) var(--pt-ease) both;
+  }
+}
+html:active-view-transition-type(ca-side-prev) {
+  &::view-transition-old(root) {
+    animation: ca-prev-old var(--pt-out) var(--ease-in-out) both;
+  }
+  &::view-transition-new(root) {
+    animation: ca-prev-new var(--pt-in) var(--pt-delay) var(--pt-ease) both;
+  }
+}
+
+/* --- ca-action : verso i Contatti. Non è una lettura, è un'azione: la
+       pagina si scopre dal basso come una tenda che si alza. -------------- */
+/* Nota di resa: qui c'era un clip-path animato su tutta la pagina. È
+   corretto ma costoso — il browser deve ritagliare a ogni fotogramma un
+   fotogramma grande quanto lo schermo — e su portatili modesti si vedeva
+   scattare. Una traslazione fa la stessa cosa all'occhio (la pagina sale
+   da sotto) e viene composta dalla scheda grafica senza ridisegnare nulla. */
+@keyframes ca-action-old { to   { opacity: 0; transform: translateY(-2%); } }
+@keyframes ca-action-new { from { opacity: 0; transform: translateY(6%); } }
+
+html:active-view-transition-type(ca-action) {
+  &::view-transition-old(root) {
+    animation: ca-action-old var(--pt-out) var(--ease-in-out) both;
+  }
+  &::view-transition-new(root) {
+    animation: ca-action-new var(--pt-in) var(--pt-delay) var(--pt-ease) both;
+  }
+}
+
+/* Uscendo dai Contatti la tenda si richiude verso il basso */
+@keyframes ca-action-back-old { to   { opacity: 0; transform: translateY(6%); } }
+@keyframes ca-action-back-new { from { opacity: 0; transform: translateY(-2%); } }
+
+html:active-view-transition-type(ca-action-back) {
+  &::view-transition-old(root) {
+    animation: ca-action-back-old var(--pt-out) var(--ease-in-out) both;
+  }
+  &::view-transition-new(root) {
+    animation: ca-action-back-new var(--pt-in) var(--pt-delay) var(--pt-ease) both;
+  }
+}
+
+/* --- ca-fade : pagine di servizio. Dissolvenza piatta, nessun movimento. -- */
+html:active-view-transition-type(ca-fade) {
+  &::view-transition-old(root) {
+    animation: ca-out-fade var(--pt-out) linear both;
+  }
+  &::view-transition-new(root) {
+    animation: ca-out-fade var(--pt-in) var(--pt-delay) var(--pt-ease) reverse both;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MORPHING DELLE IMMAGINI FRA PAGINE
+   Le card della home e le categorie di Collezioni condividono lo stesso
+   view-transition-name: la fotografia della card si espande e diventa quella
+   della categoria. Il nome viene assegnato da js/app.js.
+
+   L'animazione la fa il browser da sola: qui si regola solo il tempo e si
+   toglie la dissolvenza incrociata, che sulla stessa immagine produrrebbe
+   uno sfarfallio invece di una trasformazione pulita.
+   -------------------------------------------------------------------------- */
+
+/* Il gruppo che morfa dura quanto l'intero passaggio, curva compresa:
+   se finisse prima resterebbe fermo ad aspettare che la pagina intorno
+   lo raggiunga, ed è lo stesso scatto di prima visto da vicino. */
+::view-transition-group(.ca-morph) {
+  animation-duration: calc(var(--pt-delay) + var(--pt-in));
+  animation-timing-function: var(--pt-ease);
+}
+/* Qui prima c'era animation: none — tolta la dissolvenza perché su una
+   fotografia che si trasforma in se stessa produce uno sfarfallio. Il
+   guaio è che un elemento spaiato, senza animazione, resta fermo e
+   perfettamente opaco sopra la pagina nuova per tutta la durata del
+   gruppo, e poi sparisce. Adesso i nomi li assegna il JavaScript uno
+   alla volta, quindi spaiati non ce ne sono più; e la dissolvenza resta
+   comunque, brevissima, come rete di sicurezza. */
+::view-transition-old(.ca-morph),
+::view-transition-new(.ca-morph) {
+  animation-duration: var(--pt-out);
+  animation-timing-function: linear;
+  mix-blend-mode: normal;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ==========================================================================
+   2. SCORRIMENTO
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+  /* La nav è fissa: senza questo margine il titolo di destinazione
+     finirebbe sotto la barra quando si clicca un'ancora. */
+  scroll-padding-top: 96px;
+}
+
+/* ==========================================================================
+   3. COMPARSA DELLE SEZIONI — scroll-driven animations
+   Animazioni legate alla posizione nel viewport, calcolate dal compositor:
+   non passano dal thread principale e non costano frame.
+
+   Deliberatamente minime: dissolvenza più 12px di risalita, una volta sola.
+   Nessuno stagger, nessuna sequenza coreografata.
+   ========================================================================== */
+
+@supports (animation-timeline: view()) {
+
+  @keyframes ca-enter {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Il blocco entra mentre attraversa il bordo inferiore del viewport e ha
+     finito ben prima di arrivare al centro: quando lo leggi è già fermo.
+
+     I selettori colpiscono solo i figli diretti del contenitore di sezione.
+     È voluto: una griglia entra come blocco unico, non cella per cella.
+     Quattro card che compaiono a scacchiera sarebbero rumore, non eleganza. */
+  .section > .container > *,
+  .category--wide > *,
+  .page-head__inner {
+    animation: ca-enter linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 42%;
+  }
+
+  /* L'hero è già inquadrato al caricamento: non deve comparire. */
+  .hero, .hero * { animation: none; }
+}
+
+/* ==========================================================================
+   4. MICRO-INTERAZIONI
+   Rifiniscono gli stati già esistenti. Nessun nuovo elemento in movimento.
+   ========================================================================== */
+
+/* Nota sulla cascata: in components.css gli stati :hover usano la shorthand
+   `background:`, che azzera anche background-image. Per questo ogni regola
+   :hover qui sotto ridichiara l'immagine di sfondo: senza, il gradiente
+   sparirebbe proprio nel momento in cui deve animarsi. */
+
+/* --- Link: il sottolineato cresce da sinistra invece di apparire di colpo --- */
+
+.nav__link,
+.btn--ghost,
+.crumbs a,
+.info__value a,
+.footer__list a,
+.prose a,
+.field--check a {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size var(--motion-base) var(--ease-out),
+              color var(--motion-fast) linear;
+}
+.nav__link:hover,
+.btn--ghost:hover,
+.crumbs a:hover,
+.info__value a:hover,
+.footer__list a:hover,
+.prose a:hover,
+.field--check a:hover {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 100% 1px;
+}
+
+/* La voce della pagina corrente ha il sottolineato già disteso */
+.nav__link[aria-current="page"] { background-size: 100% 1px; }
+
+/* Il bordo statico non serve più: la riga la disegna il gradiente.
+   Senza questo, al passaggio del mouse comparirebbero due linee sovrapposte. */
+.nav__link, .btn--ghost, .crumbs a, .info__value a,
+.prose a, .field--check a { border-bottom-color: transparent !important; }
+
+/* --- Card: sollevamento e avvicinamento dell'immagine ---
+   Il gesto classico: la card sale di 4px, la fotografia entra di poco e il
+   titolo si sottolinea. Tre segnali coordinati, nessuno appariscente. */
+
+.card {
+  transition: transform var(--motion-base) var(--ease-out);
+}
+.card__media {
+  /* Il raggio va sul contenitore, altrimenti l'immagine che cresce
+     scavalcherebbe gli angoli arrotondati. */
+  overflow: hidden;
+}
+.card__media img,
+.category__media img,
+.split__media img,
+.page-head__media img,
+.section__media img {
+  transition: transform var(--motion-slow) var(--ease-out);
+}
+
+.card:hover { transform: translateY(-4px); }
+.card:hover .card__media img { transform: scale(1.05); }
+
+/* La riga di testo sotto la card segue il movimento con un ritardo naturale
+   dato dalla curva, non da un delay esplicito. */
+.card__title {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size var(--motion-base) var(--ease-out);
+}
+.card:hover .card__title { background-size: 100% 1px; text-decoration: none; }
+
+/* Immagini dentro i blocchi split e categoria: stesso avvicinamento */
+.split:hover .split__media img,
+.category--wide:hover .category__media img { transform: scale(1.03); }
+
+/* --- Righe di elenco: la riga si accende al passaggio ---
+   Nessun riquadro, nessun bordo nuovo: cambia il fondo di un soffio e il
+   numero passa da attenuato a pieno. */
+.index__row,
+.spec-list li,
+.hours li {
+  transition: background-color var(--motion-fast) linear,
+              padding-left var(--motion-base) var(--ease-out);
+}
+.index__row:hover,
+.spec-list li:hover,
+.hours li:hover {
+  background-color: rgba(10, 10, 10, 0.035);
+  padding-left: var(--spacing-10);
+}
+.section--dark .index__row:hover,
+.section--dark-2 .index__row:hover,
+.section--dark .spec-list li:hover,
+.section--dark-2 .spec-list li:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.index__num { transition: opacity var(--motion-fast) linear; }
+.index__row:hover .index__num { opacity: 1; }
+
+/* --- Chip dell'indice collezioni: si riempiono da sinistra --- */
+.chip {
+  background-image: linear-gradient(var(--color-charcoal), var(--color-charcoal));
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 0% 100%;
+  transition: background-size var(--motion-base) var(--ease-out),
+              color var(--motion-fast) linear,
+              border-color var(--motion-fast) linear;
+}
+.chip:hover {
+  background-size: 100% 100%;
+  color: var(--color-paper);
+  border-color: var(--color-charcoal);
+}
+
+/* --- Pressione: ogni collegamento risponde al clic ---
+   Un cedimento minimo, 99%, che dura quanto il dito resta giù. È il segnale
+   che il clic è stato raccolto, utile soprattutto su schermi tattili dove
+   la transizione di pagina impiega un istante a partire. */
+.card:active,
+.chip:active,
+.btn:active,
+.logo:active { transform: scale(0.99); }
+.card:active { transform: translateY(-2px) scale(0.995); }
+
+/* --- Metriche: il numero si stacca appena --- */
+.metric { transition: transform var(--motion-base) var(--ease-out); }
+.metric:hover { transform: translateY(-3px); }
+
+/* --- Bottoni: si riempiono dal basso --- */
+.btn--outline,
+.btn--outline-invert {
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 0%;
+  transition: background-size var(--motion-base) var(--ease-out),
+              color var(--motion-fast) linear,
+              border-color var(--motion-fast) linear;
+}
+.btn--outline        { background-image: linear-gradient(var(--color-charcoal), var(--color-charcoal)); }
+.btn--outline-invert { background-image: linear-gradient(var(--color-paper), var(--color-paper)); }
+
+.btn--outline:hover {
+  background-color: transparent;
+  background-image: linear-gradient(var(--color-charcoal), var(--color-charcoal));
+  background-size: 100% 100%;
+}
+.btn--outline-invert:hover {
+  background-color: transparent;
+  background-image: linear-gradient(var(--color-paper), var(--color-paper));
+  background-size: 100% 100%;
+}
+
+/* Il pieno si svuota dall'alto, movimento speculare */
+.btn--filled {
+  background-color: transparent;
+  background-image: linear-gradient(var(--color-paper), var(--color-paper));
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 100% 100%;
+  transition: background-size var(--motion-base) var(--ease-out),
+              color var(--motion-fast) linear;
+}
+.btn--filled:hover {
+  background-color: transparent;
+  background-image: linear-gradient(var(--color-paper), var(--color-paper));
+  background-size: 100% 0%;
+}
+
+/* Il monogramma nel logo si schiarisce appena al passaggio */
+.logo__mark { transition: opacity var(--motion-fast) linear; }
+.logo:hover .logo__mark { opacity: 0.72; }
+
+/* Il pannello del menu mobile scende invece di apparire di colpo */
+.nav__panel {
+  transition: opacity var(--motion-base) var(--ease-out),
+              transform var(--motion-base) var(--ease-out);
+}
+.nav__panel[data-open="false"] { opacity: 0; transform: translateY(-8px); }
+.nav__panel[data-open="true"]  { opacity: 1; transform: none; }
+
+/* ==========================================================================
+   5. RIDUZIONE DEL MOVIMENTO
+   Chi ha attivato la preferenza di sistema torna al comportamento
+   originale del design system: profilo "none".
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+
+  html { scroll-behavior: auto; }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+
+  .section > .container > *,
+  .page-head__inner { animation: none; opacity: 1; transform: none; }
+
+  /* I tipi di transizione fra pagine sono già disattivati da
+     @view-transition { navigation: none } qui sopra: questo copre il resto. */
+  .card:active, .chip:active, .btn:active, .logo:active { transform: none; }
+
+  .card:hover,
+  .metric:hover,
+  .card:hover .card__media img,
+  .split:hover .split__media img,
+  .category--wide:hover .category__media img { transform: none; }
+  .index__row:hover, .spec-list li:hover, .hours li:hover { padding-left: 0; }
+
+  /* Gli stati restano leggibili, ma cambiano di scatto */
+  .nav__link, .btn--ghost, .crumbs a, .info__value a,
+  .footer__list a, .chip, .btn, .nav__panel, .logo__mark {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   5. L'APERTURA DELLA HOME
+
+   La prima schermata era corretta e immobile. Qui si muove, ma con una
+   regola sola: niente si muove per farsi guardare. Ogni movimento è la
+   conseguenza visiva di qualcosa che sta arrivando o che se ne sta andando.
+
+   Quattro tempi, in ordine:
+
+     1. un bordo solo attraversa lo schermo da destra verso sinistra e si
+        lascia dietro la fotografia, e nell'ultimo tratto la sfumatura del
+        lato sinistro: non sono due animazioni vicine, è lo stesso
+        ritaglio che scopre tutte e due;
+     2. le righe del titolo salgono da dietro il proprio bordo, una dopo
+        l'altra, come fogli che si impilano;
+     3. la fotografia continua a respirare, lentissima e senza fine;
+     4. scorrendo, tutto si congeda invece di sparire di colpo.
+
+   Tutto composto dalla scheda grafica: nessun ridisegno, nessun costo.
+   Togliendo questo foglio la home resta esattamente com'era prima —
+   corretta, immobile, e senza un solo stato iniziale nascosto da
+   ripristinare.
+   ========================================================================== */
+
+:root {
+  --apertura: 1100ms;         /* la fotografia che si scopre */
+  --riga: 760ms;              /* una riga di titolo */
+  --scalino: 90ms;            /* fra una riga e la successiva */
+  /* Curva lunga: parte decisa e si posa. Su un movimento da un secondo la
+     differenza fra questa e una ease-out qualsiasi si sente tutta. */
+  --ease-posa: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+
+  /* --- 1. la fotografia si scopre ------------------------------------ */
+
+  /* Si scopre da destra verso sinistra, nella stessa direzione in cui la
+     sfumatura la stacca dal bordo: il gesto sembra la sfumatura stessa che
+     si apre e lascia dietro di sé la fotografia.
+
+     Con un ritaglio e non con la maschera. Prima muovevo la maschera, e per
+     poterla far scorrere le raddoppiavo la larghezza — ma raddoppiando la
+     larghezza raddoppiavo anche la posizione di ogni tappa, e il bordo
+     sfumato finiva a metà schermo invece che accanto al testo. Un errore
+     che non si vedeva leggendo il foglio dove la sfumatura è scritta,
+     perché stava in un altro file.
+
+     Il ritaglio non tocca la maschera: le due cose non si parlano più. */
+  .hero__media {
+    animation: ca-svela var(--apertura) var(--ease-posa) both;
+  }
+  @keyframes ca-svela {
+    from { clip-path: inset(0 0 0 82%); }
+    to   { clip-path: inset(0 0 0 0); }
+  }
+
+  /* LA SFOCATURA È IL BORDO CHE SCOPRE, NON UNA COSA CHE ARRIVA DOPO
+
+     Prima il pannello sfocato compariva per conto suo: partiva a metà
+     apertura, saliva di quattordici pixel e passava da trasparente a
+     pieno. Erano due animazioni diverse una accanto all'altra — la
+     fotografia che si scopriva e, poco dopo, un pannello che si accendeva
+     sopra. Lo stacco che si vedeva era esattamente quello: due gesti dove
+     ne serviva uno.
+
+     Adesso il pannello è scoperto dallo stesso bordo che scopre la
+     fotografia. Stesso ritaglio, stessa durata, stessa curva, nessun
+     ritardo: il bordo attraversa lo schermo una volta sola e si lascia
+     dietro prima la fotografia e poi, nell'ultimo tratto, la sfumatura.
+     Non c'è un momento in cui qualcosa si accende, perché non c'è niente
+     che si accenda.
+
+     I 195%: il bordo parte dall'82% della larghezza dell'hero, e il
+     pannello è largo il 42%. In coordinate del pannello quell'82% sta a
+     82/42 = 195%. Sotto i 700px il pannello è largo il 62% e lo stesso
+     conto dà 132%. Sono le due sole cifre da rifare se un giorno cambia
+     la larghezza della sfumatura. */
+  .hero__sfoca {
+    --fronte: 195%;
+    animation: ca-svela-fronte var(--apertura) var(--ease-posa) both;
+  }
+  @media (max-width: 700px) {
+    .hero__sfoca { --fronte: 132%; }
+  }
+  @keyframes ca-svela-fronte {
+    from { clip-path: inset(0 0 0 var(--fronte)); }
+    to   { clip-path: inset(0 0 0 0); }
+  }
+
+  /* --- 2. il titolo sale riga per riga ------------------------------- */
+
+  .hero__riga { display: block; overflow: hidden; }
+
+  .hero__riga-in {
+    display: block;
+    animation: ca-sale var(--riga) var(--ease-posa) both;
+    /* --i è l'indice della riga: lo scalino nasce da lì e non da una
+       regola per ogni riga. Aggiungendo un <br> al titolo, la riga in più
+       si accoda da sola. */
+    animation-delay: calc(220ms + var(--i, 0) * var(--scalino));
+  }
+  @keyframes ca-sale {
+    from { transform: translateY(112%); }
+    to   { transform: none; }
+  }
+
+  /* Occhiello, sommario e bottoni: stesso ritmo, movimento più corto —
+     sono testo di servizio e non devono competere col titolo. */
+  .hero__label,
+  .hero__lede,
+  .hero__actions {
+    animation: ca-emerge var(--riga) var(--ease-posa) both;
+    animation-delay: calc(260ms + var(--i, 0) * var(--scalino));
+  }
+  @keyframes ca-emerge {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* --- 3. il respiro ------------------------------------------------- */
+
+  /* Ventotto secondi per il 3,5% di scala: circa un decimo di pixel al
+     fotogramma. Non si vede muoversi, si vede che è viva — è la
+     differenza fra una fotografia e una finestra.
+
+     Vale per la fotografia sola, quella che resta se la vetrina non
+     parte: figlia diretta di .hero__media, quindi il selettore la
+     distingue senza bisogno di una classe in più. */
+  .hero__media > img {
+    animation: ca-respiro 28s ease-in-out infinite alternate;
+    animation-delay: var(--apertura);
+    transform-origin: 60% 50%;
+  }
+  @keyframes ca-respiro {
+    from { transform: scale(1); }
+    to   { transform: scale(1.035); }
+  }
+
+  /* Nella vetrina ogni fotografia vive poco più di sette secondi — sei di
+     permanenza più la dissolvenza — e il respiro dura quanto lei. Non
+     torna indietro: quando la successiva la sostituisce, questa si stava
+     ancora avvicinando. È la ragione per cui il movimento non si nota mai
+     fermarsi. */
+  .hero .vetrina__foto img {
+    animation: ca-respiro-hero 7400ms linear both;
+    transform-origin: 55% 50%;
+  }
+  @keyframes ca-respiro-hero {
+    from { transform: scale(1); }
+    to   { transform: scale(1.05); }
+  }
+
+  /* --- 4. il congedo allo scorrimento -------------------------------- */
+
+  @supports (animation-timeline: view()) {
+    /* Scorrendo, il testo dell'hero si alza e si spegne prima di uscire
+       dallo schermo. Legato alla posizione, non al tempo: il movimento è
+       esattamente quello del dito o della rotellina, quindi non può
+       sembrare in ritardo. */
+    .hero__content {
+      animation: ca-congedo linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 60%;
+    }
+    @keyframes ca-congedo {
+      from { opacity: 1; transform: none; }
+      to   { opacity: 0; transform: translateY(-40px); }
+    }
+  }
+
+  /* --- il segno che dice "sotto c'è altro" --------------------------- */
+
+  .hero__giu {
+    position: absolute;
+    left: 50%;
+    bottom: var(--spacing-20);
+    z-index: 1;
+    width: 1px;
+    height: 46px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.22);
+    animation: ca-emerge 900ms var(--ease-posa) both;
+    animation-delay: 1s;
+  }
+  /* Un segmento chiaro scende dentro la linea e ricomincia. Non lampeggia
+     e non rimbalza: scende e basta, come lo sguardo che si sta chiedendo
+     cosa ci sia sotto. */
+  .hero__giu-linea {
+    display: block;
+    width: 1px;
+    height: 18px;
+    background: var(--color-paper);
+    animation: ca-scende 2.4s var(--ease-in-out) infinite;
+  }
+  @keyframes ca-scende {
+    0%        { transform: translateY(-18px); }
+    55%, 100% { transform: translateY(46px); }
+  }
+
+  /* Sparisce appena la pagina si muove: ha detto quello che doveva. */
+  @supports (animation-timeline: scroll()) {
+    .hero__giu {
+      animation: ca-emerge 900ms var(--ease-posa) 1s both,
+                 ca-sparisce linear both;
+      animation-timeline: auto, scroll();
+      animation-range: normal, 0 12svh;
+    }
+    @keyframes ca-sparisce {
+      to { opacity: 0; }
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  /* Su telefono la prima schermata è già corta: il segno in fondo
+     toglierebbe spazio al titolo per dire una cosa che lì si capisce
+     comunque, perché il pollice è già sullo schermo. */
+  .hero__giu { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__media,
+  .hero__media img,
+  .hero__riga-in,
+  .hero__label,
+  .hero__lede,
+  .hero__actions,
+  .hero__content,
+  .hero__giu,
+  .hero__giu-linea { animation: none; }
+  .hero__giu { display: none; }
+}

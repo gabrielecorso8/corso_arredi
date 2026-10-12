@@ -1,0 +1,140 @@
+/* ==========================================================================
+   CORSO ARREDI — LA VETRINA
+   Il carosello che va da solo, accanto a "Vieni a vedere".
+
+   Vincoli del sistema rispettati: nessuna ombra, raggi del sistema, palette
+   a sei colori. Il movimento è dissolvenza e scala impercettibile — nessuna
+   traslazione, perché un'immagine che scorre di lato chiede di essere
+   seguita, e questa deve solo starci accanto mentre si legge.
+   ========================================================================== */
+
+.vetrina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-14);
+  width: 100%;
+}
+
+.vetrina__palco {
+  position: relative;
+  /* Le fotografie dello Studio sono tutte verticali: il riquadro prende la
+     loro proporzione invece di ritagliarle a forza. */
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-images);
+  overflow: hidden;
+  background: var(--color-bone);
+}
+
+.vetrina__foto {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 1;
+  transition: opacity 900ms linear;
+}
+.vetrina__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Il respiro: 22 secondi per il 4%. Più lento di quanto l'occhio sappia
+     seguire, abbastanza perché la fotografia non sembri un poster.
+     Comincia appena l'immagine entra e non fa in tempo a finire: quando
+     la successiva la sostituisce, questa si stava ancora avvicinando. */
+  animation: vetrina-respiro 22s linear both;
+  transform-origin: 50% 45%;
+}
+@keyframes vetrina-respiro {
+  from { transform: scale(1); }
+  to   { transform: scale(1.04); }
+}
+
+/* Chi entra parte trasparente, chi esce ci diventa: per la durata della
+   dissolvenza sono sovrapposte, ed è esattamente quello che serve —
+   nessuno stacco, nessun fondo che si vede in mezzo. */
+.vetrina__foto.is-entra { opacity: 0; }
+.vetrina__foto.is-esce  { opacity: 0; }
+
+/* --------------------------------------------------------------------------
+   Sotto
+   -------------------------------------------------------------------------- */
+
+.vetrina__sotto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-18);
+  flex-wrap: wrap;
+}
+
+.vetrina__did {
+  margin: 0;
+  opacity: var(--opacity-dim);
+  /* Cambia insieme alla fotografia, un attimo dopo. */
+  animation: vetrina-did 600ms var(--ease-out, ease) both;
+}
+@keyframes vetrina-did {
+  from { opacity: 0; }
+  to   { opacity: var(--opacity-dim); }
+}
+
+.vetrina__punti { display: flex; gap: var(--spacing-6); flex-shrink: 0; }
+
+/* I PUNTINI ESISTONO SOLO SE C'È DA SCEGLIERE
+
+   Quante fotografie ci siano lo dice la cartella, e può essere una sola.
+   Un puntino solo non è un comando: è un pallino acceso che non porta da
+   nessuna parte. Con meno di due fotografie sparisce, e con zero sparisce
+   anche la riga sotto — che altrimenti resterebbe come uno scalino vuoto. */
+.vetrina.is-sola .vetrina__punti { display: none; }
+.vetrina.is-vuota .vetrina__sotto { display: none; }
+.vetrina__punto {
+  width: 22px; height: 2px;
+  padding: 0;
+  border: 0;
+  background: var(--color-bone);
+  cursor: pointer;
+  transition: background-color 300ms linear;
+}
+.vetrina__punto[aria-selected="true"] { background: var(--color-charcoal); }
+.vetrina__punto:focus-visible { outline: 2px solid var(--color-charcoal); outline-offset: 4px; }
+
+/* Su banda scura i puntini si invertono */
+.section--dark .vetrina__punto,
+.section--dark-2 .vetrina__punto { background: rgba(255, 255, 255, 0.28); }
+.section--dark .vetrina__punto[aria-selected="true"],
+.section--dark-2 .vetrina__punto[aria-selected="true"] { background: var(--color-paper); }
+
+@media (max-width: 900px) {
+  /* In colonna la fotografia verticale a tutta larghezza sarebbe altissima:
+     si accorcia a un rapporto più contenuto. */
+  .vetrina__palco { aspect-ratio: 4 / 5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vetrina__foto { transition: none; }
+  .vetrina__foto img { animation: none; }
+  .vetrina__did { animation: none; }
+}
+
+/* ==========================================================================
+   LA VETRINA COME SFONDO DELL'HERO
+
+   Stesso componente, altro mestiere: qui non è un riquadro accanto al testo,
+   è il fondo su cui il testo sta. Quindi niente proporzione dichiarata —
+   riempie quello che le viene dato — niente didascalia e niente puntini: la
+   prima schermata deve avere una cosa sola da leggere, e quella è il titolo.
+
+   La durata della dissolvenza arriva da JavaScript come variabile, perché
+   qui e nello Studio è diversa e il valore vive in un posto solo.
+   ========================================================================== */
+
+.vetrina--hero { position: absolute; inset: 0; gap: 0; }
+.vetrina--hero .vetrina__palco {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+  background: var(--surface-ocean-floor);
+}
+.vetrina__foto { transition-duration: var(--vetrina-cambio, 900ms); }

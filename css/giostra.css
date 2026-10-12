@@ -1,0 +1,284 @@
+/* ==========================================================================
+   CORSO ARREDI — LA GIOSTRA
+   Lo scorrimento circolare della singola collezione.
+
+   Vincoli rispettati: palette a sei colori, raggi del sistema, nessuna
+   ombra. Il movimento è solo traslazione e opacità — nessuna scala, nessuna
+   rotazione, nessuna prospettiva.
+   ========================================================================== */
+
+.giostra {
+  background: var(--surface-ocean-floor);
+  color: var(--color-paper);
+  padding-block: var(--spacing-30) var(--spacing-36);
+  overflow: hidden;                /* i riquadri laterali escono di lato:
+                                      senza questo comparirebbe una barra */
+}
+
+/* --------------------------------------------------------------------------
+   Il palco
+
+   La larghezza di una fotografia è dichiarata una volta sola, qui: la usa
+   il riquadro per dimensionarsi e il cuore per trovare l'angolo destro.
+   Cambiandola a un punto di rottura si spostano tutti e due insieme, e
+   l'angolo resta l'angolo.
+   -------------------------------------------------------------------------- */
+
+.giostra { --diapo-w: min(70vw, 860px); }
+
+/* --------------------------------------------------------------------------
+   Le istruzioni, sopra le fotografie
+   Un cuoricino in linea col testo: dice a cosa somiglia quello che si
+   troverà nell'angolo, senza doverlo descrivere a parole.
+   -------------------------------------------------------------------------- */
+
+.giostra__istruzioni {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-9);
+  /* Lo stacco dalle fotografie è generoso di proposito: la frase deve
+     leggersi come una premessa e non come la didascalia di quella in
+     mezzo. Sotto i 900px si riduce, perché lì lo schermo è già stretto
+     di suo e uno spazio grande diventa un buco. */
+  margin: 0 0 var(--spacing-45);
+  color: rgba(255, 255, 255, 0.72);
+}
+.giostra__cuoricino { flex-shrink: 0; line-height: 1; }
+.giostra__cuoricino svg { display: block; transform: translateY(2px); }
+
+.giostra__palco {
+  position: relative;
+  height: min(62svh, 620px);
+  min-height: 320px;
+  touch-action: pan-y;             /* il trascinamento orizzontale è nostro,
+                                      quello verticale resta della pagina */
+  cursor: grab;
+  /* La prospettiva sta qui e non sui riquadri: così tutte le fotografie
+     sono viste dallo stesso punto, come da un'unica posizione di chi
+     guarda. Prospettive separate darebbero fughe diverse e la fila
+     sembrerebbe storta. */
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
+}
+.giostra__palco.is-presa { cursor: grabbing; }
+
+.giostra__pista {
+  position: absolute;
+  inset: 0;
+  /* Senza questo i figli verrebbero appiattiti sullo stesso piano e la
+     profondità sparirebbe. Nessun overflow qui dentro: basterebbe a
+     riportare tutto in piano. */
+  transform-style: preserve-3d;
+}
+
+/* --------------------------------------------------------------------------
+   Un riquadro
+
+   La posizione la calcola JavaScript e la scrive in transform: traslazione,
+   allontanamento e rotazione crescono insieme alla distanza dal centro.
+   Durante il trascinamento la distanza è un numero con la virgola, quindi
+   il movimento è continuo e non a scatti.
+   -------------------------------------------------------------------------- */
+
+.diapo {
+  --velo: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: var(--diapo-w);
+  margin-left: calc(var(--diapo-w) / -2);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition: transform var(--motion-slower, 340ms) var(--ease-out, cubic-bezier(0.22, 0.61, 0.36, 1));
+  will-change: transform;
+}
+
+/* Il riquadro rimesso dall'altra parte non deve attraversare lo schermo */
+.diapo.is-salto { transition: none; }
+
+/* Mentre si trascina non ci sono transizioni: la posizione arriva già
+   fotogramma per fotogramma dal dito, e una transizione sopra la
+   renderebbe molle e in ritardo. */
+.is-presa .diapo { transition: none; }
+
+.diapo figure { margin: 0; height: 100%; }
+
+.diapo__cornice {
+  position: relative;
+  height: 100%;
+  border-radius: var(--radius-images);
+  overflow: hidden;
+  background: var(--color-slate-depth);
+  /* La cornice è il modo più economico di dire dove finisce una
+     fotografia e comincia il fondo. Un capello, non un bordo. */
+  outline: 1px solid rgba(255, 255, 255, 0.22);
+  outline-offset: -1px;
+}
+.diapo__cornice img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* L'ombra di chi sta dietro. È un pannello opaco sopra la fotografia, non
+   una trasparenza della fotografia: la copre. Due riquadri sovrapposti
+   restano due riquadri distinti, non una macchia. */
+.diapo__ombra {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-ocean-floor);
+  opacity: var(--velo);
+  pointer-events: none;
+  transition: opacity var(--motion-slow, 260ms) linear;
+}
+.is-presa .diapo__ombra { transition: none; }
+
+/* Quella davanti è pulita: niente velo, cornice più netta. */
+.diapo.is-centro .diapo__cornice { outline-color: rgba(255, 255, 255, 0.42); }
+
+/* --------------------------------------------------------------------------
+   Frecce
+   -------------------------------------------------------------------------- */
+
+.giostra__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 48px; height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-buttons);
+  background: rgba(3, 30, 37, 0.62);
+  color: var(--color-paper);
+  cursor: pointer;
+  transition: background-color 150ms linear, border-color 150ms linear;
+}
+.giostra__nav:hover { background: var(--color-paper); color: var(--color-charcoal); }
+.giostra__nav--prev { left: var(--page-gutter); }
+.giostra__nav--next { right: var(--page-gutter); }
+
+/* --------------------------------------------------------------------------
+   Sotto la fotografia
+   -------------------------------------------------------------------------- */
+
+.giostra__sotto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-20);
+  padding-top: var(--spacing-30);
+}
+
+.giostra__testi { display: flex; flex-direction: column; gap: var(--spacing-8); }
+.giostra__testo { color: rgba(255, 255, 255, 0.72); }
+
+/* --------------------------------------------------------------------------
+   IL CUORE SULLA FOTOGRAFIA
+
+   Sta in alto a destra dentro la fotografia al centro. Le coordinate sono
+   calcolate sulla stessa larghezza del riquadro centrale, così resta
+   incollato all'angolo a qualunque dimensione di finestra senza doverlo
+   inseguire da JavaScript.
+
+   È pieno, non trasparente: un comando che si vede a metà sembra disattivo,
+   e questo è il gesto più importante della pagina.
+   -------------------------------------------------------------------------- */
+
+.giostra__palco > .cuore {
+  position: absolute;
+  /* Sopra ogni riquadro: la fotografia davanti arriva a z-index 100. */
+  z-index: 200;
+  top: var(--spacing-14);
+  left: 50%;
+  /* Metà larghezza porta al bordo destro della fotografia; da lì si
+     rientra di quanto serve a lasciarlo staccato dall'angolo. Le due
+     misure vengono dalla stessa variabile del riquadro, quindi restano
+     allineate a qualunque dimensione di finestra. */
+  margin-left: calc(var(--diapo-w) / 2 - 44px - var(--spacing-14));
+  width: 44px; height: 44px;
+}
+
+/* Il testo cambia insieme alla fotografia: entra con la stessa curva, un
+   filo più tardi, così si legge come una conseguenza e non come un secondo
+   evento indipendente. */
+.giostra__testi.is-entra {
+  animation: giostra-testo var(--motion-slow, 260ms) var(--ease-out, ease) both;
+  animation-delay: 90ms;
+}
+@keyframes giostra-testo {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.giostra__barra {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-20);
+  flex-wrap: wrap;
+  padding-top: var(--spacing-10);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+.giostra__azioni { display: flex; align-items: center; gap: var(--spacing-10); }
+.giostra__spinta { color: rgba(255, 255, 255, 0.72); margin: 0; }
+
+/* La chiamata all'azione cambia peso quando qualcosa è stato segnato:
+   prima è una possibilità, dopo è il passo successivo. */
+.giostra__cta { transition: background-color 150ms linear, color 150ms linear; }
+
+/* --------------------------------------------------------------------------
+   Puntini
+   -------------------------------------------------------------------------- */
+
+.giostra__punti { display: flex; flex-wrap: wrap; gap: var(--spacing-6); }
+.giostra__punto {
+  width: 26px; height: 2px;
+  padding: 0;
+  border: 0;
+  background: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition: background-color 150ms linear;
+}
+.giostra__punto[aria-selected="true"] { background: var(--color-paper); }
+.giostra__punto:focus-visible { outline: 2px solid var(--color-paper); outline-offset: 4px; }
+
+/* --------------------------------------------------------------------------
+   Adattamenti
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .giostra { --diapo-w: 82vw; }
+  .giostra__istruzioni { margin-bottom: var(--spacing-30); }
+  .giostra__palco { perspective: 1000px; }
+  .giostra__nav { width: 42px; height: 42px; }
+  .giostra__nav--prev { left: var(--spacing-10); }
+  .giostra__nav--next { right: var(--spacing-10); }
+}
+
+@media (max-width: 600px) {
+  .giostra { --diapo-w: 86vw; }
+  .giostra__palco { height: min(48svh, 420px); perspective: 760px; }
+  .giostra__palco > .cuore { top: var(--spacing-10); margin-left: calc(var(--diapo-w) / 2 - 44px - var(--spacing-10)); }
+  /* Su telefono si scorre col dito: le frecce ruberebbero spazio alla
+     fotografia per fare un lavoro che il pollice fa meglio. */
+  .giostra__nav { display: none; }
+  .giostra__barra { flex-direction: column; align-items: stretch; }
+  .giostra__azioni .btn { flex: 1 1 auto; justify-content: center; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diapo, .diapo__ombra { transition: none; }
+  .giostra__testi.is-entra { animation: none; }
+}
+
+/* Il posto che la giostra occupa mentre le fotografie vengono contate.
+   Serve a non far saltare il resto della pagina quando arrivano: senza,
+   il testo sotto si sposterebbe verso il basso di colpo. */
+.giostra-posto {
+  min-height: min(62svh, 620px);
+  background: var(--surface-ocean-floor);
+}

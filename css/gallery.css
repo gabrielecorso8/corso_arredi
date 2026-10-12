@@ -1,0 +1,675 @@
+/* ==========================================================================
+   CORSO ARREDI — IL CONFIGURATORE, IL CUORE, I PREFERITI, IL CALENDARIO
+   --------------------------------------------------------------------------
+   Qui c'era anche la galleria a schermo pieno delle collezioni, con il suo
+   <dialog>, le frecce e i puntini. È stata tolta insieme al codice che la
+   costruiva: le fotografie di una collezione adesso stanno nella giostra,
+   e una galleria che non si apre da nessuna parte è solo peso da portare.
+
+   Stessi vincoli del resto del sito: palette a sei colori, raggi 5/32/0,
+   nessuna ombra.
+   ========================================================================== */
+
+/* ==========================================================================
+   CONFIGURATORE DI PROGETTO
+   Un passo alla volta, risposte da toccare, riepilogo che si scrive da solo.
+   Stessi vincoli: sei colori, raggi 5/32/0, nessuna ombra.
+   ========================================================================== */
+
+.cfg { display: flex; flex-direction: column; gap: var(--spacing-30); }
+
+/* --- avanzamento --------------------------------------------------------- */
+
+.cfg__head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-18);
+}
+
+.cfg__bar {
+  --cfg-progress: 0%;
+  position: relative;
+  flex: 1;
+  height: 1px;
+  background: var(--color-bone);
+}
+.cfg__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--cfg-progress);
+  background: var(--color-charcoal);
+  transition: width var(--motion-slow, 320ms) var(--ease-out, ease);
+}
+.cfg__counter { white-space: nowrap; opacity: var(--opacity-dim); }
+
+/* --- un passo ------------------------------------------------------------ */
+
+.cfg__steps { min-height: 340px; }
+
+.cfg__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-18);
+}
+.cfg__step[hidden] { display: none; }
+
+/* Era un <legend> dentro un <fieldset>: il browser lo posiziona fuori dal
+   flusso, nello spazio del bordo, e dentro un contenitore flex finiva
+   sovrapposto alla domanda successiva. Ora è un normale paragrafo con
+   aria-labelledby, che dà lo stesso significato senza il difetto. */
+.cfg__legend {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-14);
+  margin: 0;
+}
+.cfg__step-num { opacity: var(--opacity-dim); flex-shrink: 0; }
+.cfg__question { display: block; }
+
+/* Il suggerimento sta subito sotto la domanda: il gap del contenitore
+   basta, senza margini negativi che facevano collidere i due testi. */
+.cfg__hint {
+  opacity: var(--opacity-dim);
+  max-width: 52ch;
+  margin-top: calc(var(--spacing-18) * -0.5);
+}
+
+/* --- opzioni ------------------------------------------------------------- */
+
+.cfg__options { display: flex; flex-wrap: wrap; gap: var(--spacing-10); }
+
+.cfg__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-10);
+  padding: var(--spacing-14) var(--spacing-20);
+  border: 1px solid var(--color-bone);
+  border-radius: var(--radius-buttons);
+  background: none;
+  color: var(--color-charcoal);
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Il numero della scorciatoia da tastiera. Sparisce su touch, dove non
+   serve e occuperebbe spazio inutilmente. */
+.cfg__opt-key {
+  opacity: 0.45;
+  font-variant-numeric: tabular-nums;
+}
+@media (pointer: coarse) { .cfg__opt-key { display: none; } }
+
+.cfg__opt[aria-pressed="true"] {
+  border-color: var(--color-charcoal);
+  background: var(--color-charcoal);
+  color: var(--color-paper);
+}
+.cfg__opt[aria-pressed="true"] .cfg__opt-key { opacity: 0.6; }
+
+/* --- facoltativi: staccati dal canale di contatto ------------------------ */
+
+.cfg__optional {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-14);
+  padding: var(--spacing-20);
+  border: 1px dashed var(--color-bone);
+  border-radius: var(--radius-buttons);
+}
+.cfg__optional-label { opacity: var(--opacity-dim); }
+
+/* --- comandi ------------------------------------------------------------- */
+
+.cfg__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-18);
+  padding-top: var(--spacing-20);
+  border-top: 1px solid var(--color-bone);
+}
+.cfg__actions [hidden] { display: none; }
+.cfg__actions .btn--outline { margin-left: auto; }
+
+/* Al primo passo Indietro resta al suo posto ma spento: nascondendolo,
+   i bottoni successivi scivolerebbero e il pollice mancherebbe il bersaglio. */
+.cfg__back:disabled { opacity: 0.35; pointer-events: none; }
+
+/* --- riepilogo ----------------------------------------------------------- */
+
+/* IL RIEPILOGO RESTA FERMO
+
+   Sta appiccicato in alto e non segue lo scorrimento: mentre si risponde
+   alle domande, quello che si sta costruendo resta sotto gli occhi.
+
+   Tre cose lo tenevano ancorato male, e sono tre errori diversi:
+
+   1. LA COLONNA FINIVA PRIMA DEL MODULO. Un elemento appiccicato non può
+      restare fermo oltre il fondo del proprio contenitore. Adesso la
+      colonna è alta quanto il modulo (.split--contatti).
+
+   2. "align-self: start" SULL'ASSE SBAGLIATO. Serviva quando il riepilogo
+      era figlio della griglia. Adesso è figlio di una colonna flex, e lì
+      quella riga non agisce più in verticale ma in orizzontale: stringeva
+      il riquadro alla larghezza del suo contenuto invece di lasciarlo
+      largo quanto la colonna. Tolta.
+
+   3. PIÙ ALTO DELLA FINESTRA NON SI APPICCICA. Se il riquadro è più alto
+      dello spazio disponibile, il browser non ha dove tenerlo fermo e lo
+      lascia scorrere — senza dire niente. Con un'altezza massima legata
+      alla finestra questo non può più succedere: se il testo cresce oltre,
+      scorre dentro il riquadro invece di trascinarlo via.
+
+   Il "top" è l'altezza della barra più un respiro, non un numero tondo:
+   se un giorno la barra cambia altezza, il riquadro la segue.
+
+   Fondo bianco e non grigio: il grigio lo faceva sembrare un riquadro
+   informativo da leggere, mentre è un testo su cui si può scrivere. */
+.cfg__summary {
+  position: sticky;
+  top: calc(var(--nav-height, 72px) + var(--spacing-20));
+  z-index: 1;
+  max-height: calc(100svh - var(--nav-height, 72px) - var(--spacing-30));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-9);
+  padding: var(--spacing-20);
+  border: 1px solid var(--color-bone);
+  border-radius: var(--radius-buttons);
+  background: var(--surface-paper);
+}
+.cfg__summary-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-10);
+}
+.cfg__summary-empty { opacity: var(--opacity-dim); }
+.cfg__summary-text[hidden], .cfg__summary-empty[hidden] { display: none; }
+
+@media (max-width: 900px) {
+  /* In una colonna sola il riepilogo sta sopra il modulo: tenerlo fermo
+     vorrebbe dire coprire le domande a cui deve rispondere. */
+  .cfg__summary { position: static; max-height: none; overflow: visible; }
+  .cfg__steps { min-height: 0; }
+}
+
+@media (max-width: 600px) {
+  /* Le opzioni diventano piene: bersagli larghi, un dito le prende
+     senza mirare. */
+  .cfg__options { flex-direction: column; align-items: stretch; }
+  .cfg__opt { width: 100%; }
+
+  /* I comandi restano a portata di pollice e non vanno a capo */
+  .cfg__actions { gap: var(--spacing-10); }
+  .cfg__actions .btn { padding: var(--spacing-16) var(--spacing-18); }
+
+  .cfg__legend { flex-direction: column; gap: var(--spacing-6); }
+  .cfg__hint { margin-top: 0; }
+}
+
+/* ==========================================================================
+   IL CUORE
+   Lo stesso bottone ovunque serva. Il pieno e il vuoto sono la stessa
+   sagoma: cambia solo il riempimento, così i due stati non possono
+   disallinearsi.
+   ========================================================================== */
+
+.cuore {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-6);
+  border: 1px solid transparent;
+  border-radius: var(--radius-buttons);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  transition: color 150ms linear, background-color 150ms linear, border-color 150ms linear;
+}
+.cuore__ico path { transition: fill 200ms linear, stroke 150ms linear; }
+.cuore.is-on .cuore__ico path { fill: currentColor; }
+
+/* Un battito solo, alla pressione. Non si ripete e non chiama attenzione
+   una seconda volta. */
+.cuore.is-batte .cuore__ico {
+  animation: cuore-batte 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes cuore-batte {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+/* --- variante sopra la fotografia della giostra ---
+   Piena e sempre presente, non solo al passaggio del mouse: sulla giostra
+   è l'azione principale, e un'azione principale non si nasconde. Il fondo
+   è paper opaco, quindi il contrasto non dipende dalla fotografia sotto:
+   charcoal su paper fa 17,4:1 in qualunque caso. */
+.cuore--foto {
+  justify-content: center;
+  gap: 0;
+  background: var(--color-paper);
+  color: var(--color-charcoal);
+  border-color: var(--color-paper);
+  border-radius: var(--radius-buttons);
+  transition: background-color 150ms linear, color 150ms linear;
+}
+.cuore--foto .cuore__testo {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.cuore--foto:hover { background: var(--color-charcoal); color: var(--color-paper); border-color: var(--color-charcoal); }
+.cuore--foto.is-on { background: var(--color-charcoal); color: var(--color-paper); border-color: var(--color-charcoal); }
+
+/* --- variante distesa, dentro la galleria --- */
+.cuore--largo {
+  padding: var(--spacing-9) var(--spacing-18);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: var(--color-paper);
+  min-height: 44px;
+}
+.cuore--largo:hover { background: rgba(255, 255, 255, 0.1); }
+.cuore--largo.is-on { background: var(--color-paper); color: var(--color-charcoal); border-color: var(--color-paper); }
+
+/* ==========================================================================
+   IL CONTATORE IN TESTA ALLA PAGINA
+   ========================================================================== */
+
+.segna {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-6);
+  padding: var(--spacing-6) var(--spacing-10);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-buttons);
+  color: inherit;
+  text-decoration: none;
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-label);
+  transition: background-color 150ms linear, color 150ms linear;
+}
+.segna[hidden] { display: none; }
+/* Sopra l'hero la nav è chiara su scuro, più in basso scura su chiaro:
+   qui si eredita currentColor e basta. Riempire di colore al passaggio
+   costringerebbe a indovinare il fondo, quindi si schiarisce e basta —
+   0.78 tiene il rapporto di contrasto sopra il minimo su entrambe. */
+.segna:hover { opacity: 0.78; }
+.segna__n { font-variant-numeric: tabular-nums; }
+.segna.is-batte svg { animation: cuore-batte 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ==========================================================================
+   L'AVVISO
+   Una riga sola, in basso, quando c'è qualcosa da dire e non vale la pena
+   interrompere. Annunciata anche a chi naviga con la voce.
+   ========================================================================== */
+
+.avviso {
+  position: fixed;
+  left: 50%;
+  bottom: var(--spacing-20);
+  transform: translate(-50%, 12px);
+  z-index: 60;
+  margin: 0;
+  max-width: min(92vw, 46ch);
+  padding: var(--spacing-10) var(--spacing-18);
+  border-radius: var(--radius-buttons);
+  background: var(--color-charcoal);
+  color: var(--color-paper);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms linear, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.avviso.is-visibile { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cuore, .avviso { transition-duration: 1ms; }
+  .cuore.is-batte .cuore__ico,
+  .segna.is-batte svg { animation: none; }
+}
+
+/* ==========================================================================
+   IL PANNELLO DELLE FOTOGRAFIE SEGNATE (in contatti)
+   Miniature quadrate a sinistra, etichetta al centro, croce a destra.
+   Una riga per foto: si scorre con l'occhio e si toglie con un dito.
+   ========================================================================== */
+
+.pref {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-10);
+  padding: var(--spacing-20);
+  border: 1px solid var(--color-bone);
+  border-radius: var(--radius-cards);
+  scroll-margin-top: 96px;
+}
+.pref[hidden] { display: none; }
+
+.pref__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-5); }
+.pref__lista[hidden] { display: none; }
+
+.pref__voce {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-10);
+  padding: var(--spacing-5);
+  border-radius: var(--radius-buttons);
+  transition: background-color 150ms linear;
+}
+.pref__voce:hover { background: var(--color-bone); }
+
+.pref__voce img {
+  width: 56px; height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-buttons);
+  flex-shrink: 0;
+}
+
+.pref__eti { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.pref__cat { opacity: var(--opacity-dim); }
+.pref__tit {
+  /* I titoli lunghi non devono allargare la colonna: si troncano su una riga */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pref__togli {
+  display: grid;
+  place-items: center;
+  width: 32px; height: 32px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-buttons);
+  background: none;
+  color: var(--color-charcoal);
+  cursor: pointer;
+  opacity: var(--opacity-dim);
+  transition: opacity 150ms linear, border-color 150ms linear;
+}
+.pref__voce:hover .pref__togli,
+.pref__togli:focus-visible { opacity: 1; border-color: var(--color-bone); }
+
+.pref__vuoto { opacity: var(--opacity-dim); }
+.pref__vuoto[hidden] { display: none; }
+.pref__altre { text-decoration: none; border-bottom: 1px solid currentColor; align-self: flex-start; }
+
+/* La nota che spiega perché una risposta è già compilata */
+.cfg__pre {
+  padding: var(--spacing-6) var(--spacing-10);
+  border-left: 2px solid var(--color-charcoal);
+  opacity: var(--opacity-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pref__voce, .pref__togli { transition-duration: 1ms; }
+}
+
+/* L'indice delle collezioni: la fotografia della card è un collegamento */
+.category__media--link { display: block; }
+.category__link { color: inherit; text-decoration: none; }
+.category__link:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ==========================================================================
+   IL RIEPILOGO CORREGGIBILE
+   Non è una casella di testo qualsiasi: deve sembrare un testo che si può
+   toccare, non un modulo in più da riempire. Bordo assente da fermo, che
+   compare quando ci si entra dentro.
+   ========================================================================== */
+
+.cfg__summary-text {
+  width: 100%;
+  min-height: 7em;
+  padding: var(--spacing-10);
+  /* Il bordo c'è da subito: un campo che sembra un paragrafo finché non
+     ci si passa sopra col mouse non lo trova nessuno, e su touch il
+     passaggio del mouse non esiste proprio. */
+  border: 1px solid var(--color-bone);
+  border-radius: var(--radius-inputs);
+  background: var(--surface-paper);
+  color: inherit;
+  font: inherit;
+  line-height: var(--leading-body);
+  resize: vertical;
+  transition: border-color 150ms linear;
+}
+.cfg__summary-text:hover { border-color: var(--color-charcoal); }
+.cfg__summary-text:focus { border-color: var(--color-charcoal); outline: 2px solid var(--color-charcoal); outline-offset: 1px; }
+.cfg__summary-text[hidden] { display: none; }
+
+.cfg__summary-reset {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: none;
+  color: inherit;
+  opacity: var(--opacity-dim);
+  cursor: pointer;
+}
+.cfg__summary-reset:hover { opacity: 1; }
+.cfg__summary-reset[hidden] { display: none; }
+
+/* ==========================================================================
+   IL VALORE SU MISURA
+   Sotto le fasce, staccato da una riga. Scrivendo, le fasce si spengono:
+   restano leggibili ma dichiarano di non essere più la risposta.
+   ========================================================================== */
+
+.cfg__libero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  margin-top: var(--spacing-18);
+  padding-top: var(--spacing-18);
+  border-top: 1px solid var(--color-bone);
+}
+.cfg__options { transition: opacity 200ms linear; }
+.cfg__options.is-spento { opacity: 0.42; }
+
+/* ==========================================================================
+   SALTA
+   Deve leggersi come una scelta prevista, non come una via di fuga: sta
+   accanto ad Avanti, stessa altezza, peso minore.
+   ========================================================================== */
+
+.cfg__salta[hidden] { display: none; }
+.cfg__actions .btn:disabled {
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   L'APPUNTAMENTO
+   ========================================================================== */
+
+.cfg__app {
+  border: 1px solid var(--color-bone);
+  border-radius: var(--radius-cards);
+  overflow: hidden;
+}
+
+.cfg__app-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-14);
+  width: 100%;
+  padding: var(--spacing-18) var(--spacing-20);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms linear;
+}
+.cfg__app-toggle:hover { background: var(--color-bone); }
+.cfg__app-piu {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 200ms var(--ease-out, ease);
+}
+.cfg__app-toggle.is-aperto .cfg__app-piu { transform: rotate(45deg); }
+
+.cfg__app-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-14);
+  padding: 0 var(--spacing-20) var(--spacing-20);
+}
+.cfg__app-corpo[hidden] { display: none; }
+.cal__intro { opacity: var(--opacity-dim); margin: 0; max-width: 56ch; }
+
+/* --- dove --- */
+.cal__luoghi { display: flex; flex-wrap: wrap; gap: var(--spacing-6); }
+.cal__luogo {
+  padding: var(--spacing-6) var(--spacing-14);
+  border: 1px solid var(--color-bone);
+  border-radius: var(--radius-buttons);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+  transition: background-color 150ms linear, border-color 150ms linear, color 150ms linear;
+}
+.cal__luogo:hover { border-color: var(--color-charcoal); }
+.cal__luogo[aria-pressed="true"] {
+  background: var(--color-charcoal);
+  border-color: var(--color-charcoal);
+  color: var(--color-paper);
+}
+
+/* --- i giorni: una riga che scorre di lato --- */
+.cal__giorni {
+  display: flex;
+  gap: var(--spacing-5);
+  overflow-x: auto;
+  padding-bottom: var(--spacing-5);
+  scroll-snap-type: x proximity;
+  /* Le giornate senza orari liberi non compaiono affatto: mostrarle
+     spente vorrebbe dire far leggere all'utente una fila di no. */
+}
+.cal__giorno {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 58px;
+  padding: var(--spacing-6) var(--spacing-9);
+  border: 1px solid var(--color-bone);
+  border-radius: var(--radius-buttons);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 150ms linear, border-color 150ms linear, color 150ms linear;
+}
+.cal__giorno:hover { border-color: var(--color-charcoal); }
+.cal__giorno[aria-selected="true"] {
+  background: var(--color-charcoal);
+  border-color: var(--color-charcoal);
+  color: var(--color-paper);
+}
+.cal__gg { text-transform: uppercase; }
+.cal__nn { font-size: var(--text-body-lg); font-weight: var(--font-weight-light); }
+
+/* --- le ore --- */
+.cal__ore { display: flex; flex-wrap: wrap; gap: var(--spacing-5); }
+.cal__ora {
+  padding: var(--spacing-6) var(--spacing-14);
+  border: 1px solid var(--color-bone);
+  border-radius: var(--radius-buttons);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-body-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color 150ms linear, border-color 150ms linear, color 150ms linear;
+}
+.cal__ora:hover { border-color: var(--color-charcoal); }
+.cal__ora[aria-pressed="true"] {
+  background: var(--color-charcoal);
+  border-color: var(--color-charcoal);
+  color: var(--color-paper);
+}
+
+.cal__conferma {
+  margin: 0;
+  padding: var(--spacing-10) var(--spacing-14);
+  border-left: 2px solid var(--color-charcoal);
+  background: var(--color-bone);
+  border-radius: 0 var(--radius-buttons) var(--radius-buttons) 0;
+}
+.cal__conferma[hidden] { display: none; }
+.cal__nota { margin: 0; opacity: var(--opacity-dim); max-width: 60ch; }
+
+@media (max-width: 600px) {
+  .cfg__actions { flex-wrap: wrap; }
+  .cfg__actions .btn { flex: 1 1 auto; text-align: center; }
+  .cal__giorno { min-width: 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfg__app-piu, .cfg__options, .cfg__summary-text { transition-duration: 1ms; }
+}
+
+/* ==========================================================================
+   LA SCHERMATA DI CHIUSURA
+   Il modulo sparisce e resta quello che si è detto: si legge una volta e
+   si chiude la pagina, quindi deve bastare da sola.
+   ========================================================================== */
+
+.cfg__esito {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-14);
+  align-items: flex-start;
+}
+
+.cfg__esito-dati {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  gap: var(--spacing-6) var(--spacing-18);
+  margin: var(--spacing-10) 0 0;
+  padding-top: var(--spacing-18);
+  border-top: 1px solid var(--color-bone);
+  width: 100%;
+}
+.cfg__esito-dati dt { opacity: var(--opacity-dim); }
+.cfg__esito-dati dd { margin: 0; overflow-wrap: anywhere; }
+
+.cfg__esito-fallback {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-10);
+  align-items: flex-start;
+  width: 100%;
+  margin-top: var(--spacing-10);
+  padding: var(--spacing-20);
+  border: 1px dashed var(--color-bone);
+  border-radius: var(--radius-buttons);
+}
+.cfg__esito-fallback p { margin: 0; max-width: 56ch; opacity: var(--opacity-dim); }
+
+.cfg__prenota[hidden] { display: none; }
+
+@media (max-width: 600px) {
+  .cfg__esito-dati { grid-template-columns: 1fr; gap: 2px var(--spacing-10); }
+  .cfg__esito-dati dd { margin-bottom: var(--spacing-10); }
+}

@@ -1,0 +1,698 @@
+/* ==========================================================================
+   CORSO ARREDI — COMPONENTI
+   Ogni componente corrisponde a una voce del capitolo "Components" del
+   design system. Vincoli rispettati in tutto il file:
+   - nessun colore cromatico: solo bone, charcoal, paper, obsidian,
+     deep-current, slate-depth
+   - raggi ammessi: 2.25px nav, 5px controlli, 32px immagini, 0px card
+   - nessuna ombra oltre --shadow-md
+   - nessuna animazione: solo transizioni 0–150ms su colore e bordo
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   LAYOUT
+   -------------------------------------------------------------------------- */
+
+.container {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+
+.section { padding-block: var(--section-gap); }
+
+.section--canvas { background: var(--surface-canvas); color: var(--color-charcoal); }
+.section--paper  { background: var(--surface-paper);  color: var(--color-charcoal); }
+
+/* Bande scure: deep-current è il fondo più profondo, slate-depth il secondario */
+.section--dark {
+  background: var(--surface-ocean-floor);
+  color: var(--color-paper);
+}
+.section--dark-2 {
+  background: var(--surface-deep-section);
+  color: var(--color-paper);
+}
+
+.stack { display: flex; flex-direction: column; gap: var(--element-gap); }
+.stack--tight { gap: var(--spacing-10); }
+.stack--wide  { gap: var(--spacing-30); }
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-18);
+}
+
+.grid { display: grid; column-gap: var(--spacing-18); row-gap: var(--spacing-36); }
+.grid--2 { grid-template-columns: repeat(2, 1fr); }
+.grid--3 { grid-template-columns: repeat(3, 1fr); }
+.grid--4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Sei elementi su quattro colonne: gli ultimi due restano orfani a sinistra.
+   Spostando il quinto in seconda colonna la coppia si centra sotto le due
+   card di mezzo. Vale solo per la riga incompleta da due. */
+.grid--4.grid--center-tail > :nth-child(5) { grid-column: 2; }
+
+@media (max-width: 900px) {
+  .grid--3, .grid--4 { grid-template-columns: repeat(2, 1fr); }
+  /* A due colonne la riga è già piena: l'offset va tolto, altrimenti
+     lascerebbe un buco. */
+  .grid--4.grid--center-tail > :nth-child(5) { grid-column: auto; }
+}
+@media (max-width: 600px) {
+  .grid--2, .grid--3, .grid--4 { grid-template-columns: 1fr; }
+}
+
+/* Hairline Divider — 1px, nessun gradiente, nessuna ombra */
+.divider {
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: var(--color-bone);
+}
+.section--dark .divider,
+.section--dark-2 .divider { background: rgba(255, 255, 255, 0.16); }
+
+/* Intestazione di sezione: meta label + heading, allineate a sinistra */
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-18);
+  max-width: 720px;
+  margin-bottom: var(--spacing-45);
+}
+
+/* --------------------------------------------------------------------------
+   BOTTONI
+   Outlined CTA · Filled Reversed · Ghost
+   Tutti a 5px di raggio, 11–12px weight 500 uppercase, tracking 0.15em.
+   -------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-20);
+  border: 1px solid transparent;
+  border-radius: var(--radius-buttons);
+  background: none;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 150ms linear, color 150ms linear, border-color 150ms linear;
+}
+
+/* Outlined su fondo chiaro */
+.btn--outline {
+  border-color: var(--color-charcoal);
+  color: var(--color-charcoal);
+}
+.btn--outline:hover {
+  background: var(--color-charcoal);
+  color: var(--color-paper);
+}
+
+/* Outlined su fondo scuro o su fotografia */
+.btn--outline-invert {
+  border-color: var(--color-paper);
+  color: var(--color-paper);
+}
+.btn--outline-invert:hover {
+  background: var(--color-paper);
+  color: var(--color-charcoal);
+}
+
+/* Filled Reversed — paper su fondo scuro. Usato con parsimonia. */
+.btn--filled {
+  background: var(--color-paper);
+  border-color: var(--color-paper);
+  color: var(--color-charcoal);
+}
+.btn--filled:hover {
+  background: transparent;
+  color: var(--color-paper);
+}
+
+/* Ghost — link testuale, sottolineatura al hover, nessun bordo */
+.btn--ghost {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: var(--text-body-sm);
+  letter-spacing: var(--tracking-label);
+  color: var(--color-charcoal);
+  border-bottom: 1px solid transparent;
+  padding-bottom: var(--spacing-4);
+}
+.btn--ghost:hover { border-bottom-color: var(--color-charcoal); }
+
+.section--dark .btn--ghost,
+.section--dark-2 .btn--ghost { color: var(--color-paper); }
+.section--dark .btn--ghost:hover,
+.section--dark-2 .btn--ghost:hover { border-bottom-color: var(--color-paper); }
+
+/* --------------------------------------------------------------------------
+   NAVIGAZIONE
+   Ghost Navigation Button · Logo Mark · Hamburger Menu Trigger
+   -------------------------------------------------------------------------- */
+
+.nav {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 100;
+  transition: background-color 150ms linear, border-color 150ms linear;
+  border-bottom: 1px solid transparent;
+}
+
+/* Trasparente sopra l'hero fotografico, e solo lì: ferma in cima alla
+   home il titolo è l'unica cosa da guardare. */
+.nav--over-hero { color: var(--color-paper); }
+
+/* AL PRIMO MOVIMENTO: IL FONDO SFOCATO
+
+   Non un fondo pieno. La barra resta in alto per tutta la pagina, e un
+   rettangolo bianco opaco alto 72 pixel, sempre lì, è una fetta di pagina
+   che non si può usare. Un fondo che sfoca quello che ha sotto occupa lo
+   stesso spazio e non lo chiude: si continua a vedere che sotto la pagina
+   scorre, e il testo della barra resta perfettamente leggibile.
+
+   Il velo bianco all'88% è quello che porta il contrasto dove serve. La
+   sfocatura da sola non basta: sfocare una fotografia chiara lascia una
+   fotografia chiara, e sopra ci va del testo scuro.
+
+   Dove la sfocatura non è supportata resta il velo, che è già quasi
+   opaco: si perde l'effetto, non la leggibilità. Nessuna seconda versione
+   da tenere allineata alla prima. */
+.nav--stuck {
+  background: rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  color: var(--color-charcoal);
+  border-bottom-color: var(--color-bone);
+}
+
+.nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-30);
+  height: var(--nav-height);
+}
+
+/* Logo Mark — il logo È il display type, nessun simbolo separato */
+.nav__logo {
+  flex-shrink: 0;
+  font-size: var(--text-heading);
+  line-height: 1;
+  letter-spacing: var(--tracking-heading-lg);
+  font-weight: var(--font-weight-light);
+}
+.nav__logo b { font-weight: var(--font-weight-regular); }
+
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-30);
+}
+
+/* Ghost Navigation Button — nessun bordo, nessun riempimento */
+.nav__link {
+  font-size: 12px;
+  line-height: 1;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  padding-bottom: var(--spacing-5);
+  border-bottom: 1px solid transparent;
+  transition: border-color 150ms linear;
+}
+.nav__link:hover,
+.nav__link[aria-current="page"] { border-bottom-color: currentColor; }
+
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-18);
+  flex-shrink: 0;
+}
+
+/* Hamburger — due linee da 1px, raggio 2.25px, affordance minima */
+.nav__toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--spacing-6);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.nav__toggle span {
+  display: block;
+  width: 18px;
+  height: 1px;
+  border-radius: var(--radius-nav);
+  background: currentColor;
+}
+
+.nav__panel {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 96px var(--page-gutter) var(--spacing-45);
+  background: var(--surface-paper);
+  color: var(--color-charcoal);
+  overflow-y: auto;
+}
+.nav__panel[data-open="true"] { display: flex; }
+
+.nav__panel-links { display: flex; flex-direction: column; }
+.nav__panel-links a {
+  padding-block: var(--spacing-18);
+  border-bottom: 1px solid var(--color-bone);
+  font-size: var(--text-subheading);
+  letter-spacing: var(--tracking-subheading);
+  font-weight: var(--font-weight-light);
+  text-transform: none;
+}
+
+@media (max-width: 1000px) {
+  .nav__links { display: none; }
+  .nav__actions > .btn { display: none; }
+  .nav__toggle { display: flex; }
+}
+
+/* --------------------------------------------------------------------------
+   HERO IMAGE CONTAINER
+   100vw × 100vh, object-fit cover, testo in basso a sinistra a ~40px dai bordi.
+   La fotografia è l'unico contenuto: nessun bordo, nessun raggio.
+   -------------------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: var(--surface-ocean-floor);
+}
+
+.hero__media { position: absolute; inset: 0; }
+.hero__media img { width: 100%; height: 100%; object-fit: cover; }
+
+/* --------------------------------------------------------------------------
+   LA SFOCATURA A SINISTRA
+
+   La fotografia copre tutta la schermata. Sulla sinistra, fin dove comincia
+   il testo, viene sfocata e portata al pieno: il titolo non sta su un
+   dettaglio a fuoco ma su una superficie calma, e il passaggio fra le due
+   cose non ha un bordo.
+
+   Non è una seconda copia della fotografia sfocata. È un pannello che
+   sfoca quello che ha dietro — backdrop-filter — quindi funziona da solo
+   anche mentre le fotografie si alternano, senza raddoppiare le immagini
+   caricate. Sopra alla sfocatura c'è il colore di fondo, pieno al bordo e
+   via via trasparente: è quello che rende "opaco a sinistra".
+
+   Le misure, su una finestra da 1440:
+
+     0 → 115 px      pieno, il titolo comincia qui sopra
+     115 → 400 px    la sfocatura si dirada
+     oltre           fotografia a fuoco
+
+   Prima qui c'era una maschera che faceva sparire la fotografia sulla
+   sinistra. Faceva il suo lavoro ma buttava via mezza immagine: adesso la
+   fotografia c'è tutta, e a sinistra è semplicemente fuori fuoco.
+   -------------------------------------------------------------------------- */
+
+.hero__sfoca {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  z-index: 1;
+  -webkit-backdrop-filter: blur(22px) saturate(0.92);
+  backdrop-filter: blur(22px) saturate(0.92);
+  background: linear-gradient(90deg,
+    var(--surface-ocean-floor) 0%,
+    rgba(3, 30, 37, 0.86) 19%,
+    rgba(3, 30, 37, 0.42) 48%,
+    rgba(3, 30, 37, 0) 100%);
+  /* La sfocatura stessa si dissolve verso destra: senza, il pannello
+     finirebbe con una linea netta in mezzo alla fotografia. */
+  -webkit-mask-image: linear-gradient(90deg,
+    rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 42%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(90deg,
+    rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 42%, rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
+}
+
+/* Dove la sfocatura non è supportata non serve una regola alternativa: il
+   gradiente qui sopra fa già da solo il mestiere principale — portare al
+   pieno il lato sinistro. Si perde la sfocatura, non la leggibilità, e non
+   c'è una seconda versione da tenere allineata alla prima. */
+
+@media (max-width: 700px) {
+  /* Su telefono il titolo parte quasi dal bordo e la schermata è stretta:
+     una fascia larga il 42% mangerebbe metà fotografia. Si allarga e si
+     appoggia soprattutto sul fondo scuro, che lì fa già il lavoro. */
+  .hero__sfoca { width: 62%; }
+}
+
+/* Scrim obbligatorio: il design system vieta testo diretto su fotografia
+   senza overlay di scurimento.
+
+   Rinforzato rispetto a prima dopo averlo misurato sui pixel veri: il testo
+   bianco dell'hero teneva 2,18:1 sotto i 1100px, ben sotto il minimo di
+   4,5:1. La fotografia del living è chiara nella parte bassa, proprio dove
+   cade il titolo. Con questi valori il caso peggiore è 5,76:1 su telefono
+   e 9,91:1 su un portatile. */
+.hero__media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    to top,
+    rgba(3, 30, 37, 0.92) 0%,
+    rgba(3, 30, 37, 0.78) 46%,
+    rgba(3, 30, 37, 0.34) 78%,
+    rgba(3, 30, 37, 0.38) 100%
+  );
+}
+
+.hero__content {
+  position: relative;
+  z-index: 3;
+  padding-block: var(--spacing-45) var(--spacing-72);
+  color: var(--color-paper);
+  /* 680 e non 900: oltre questa larghezza il titolo arriva sotto la parte
+     piena della fotografia e il contrasto crolla. Misurato, non stimato. */
+  max-width: 680px;
+}
+
+.hero__label   { color: rgba(255, 255, 255, 0.72); margin-bottom: var(--spacing-20); }
+.hero__title   { margin-bottom: var(--spacing-30); }
+.hero__lede    { margin-bottom: var(--spacing-36); }
+.hero__actions { display: flex; flex-wrap: wrap; gap: var(--spacing-14); }
+
+/* --------------------------------------------------------------------------
+   CENTERED STATEMENT BLOCK
+   Banda paper o bone, max 720px, 32–48px weight 300, 48–64px di padding
+   verticale. Lo statement da solo, nessun elemento di supporto.
+   -------------------------------------------------------------------------- */
+
+.statement {
+  max-width: 720px;
+  margin-inline: auto;
+  text-align: center;
+  padding-block: var(--spacing-14);
+}
+
+/* --------------------------------------------------------------------------
+   INDEX LIST
+   Elenco type-driven con hairline e numerazione meta. Nessuna icona,
+   nessun riquadro: la separazione viene dallo spazio e dalla riga.
+   -------------------------------------------------------------------------- */
+
+.index { border-top: 1px solid var(--color-bone); }
+.section--dark .index,
+.section--dark-2 .index { border-top-color: rgba(255, 255, 255, 0.16); }
+
+.index__row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: var(--spacing-30);
+  align-items: start;
+  padding-block: var(--spacing-30);
+  border-bottom: 1px solid var(--color-bone);
+}
+.section--dark .index__row,
+.section--dark-2 .index__row { border-bottom-color: rgba(255, 255, 255, 0.16); }
+
+.index__num  { color: inherit; opacity: var(--opacity-dim); padding-top: var(--spacing-6); }
+.index__body { display: flex; flex-direction: column; gap: var(--spacing-10); }
+
+.index__sub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-9);
+  padding-top: var(--spacing-5);
+}
+.index__sub li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: var(--spacing-6);
+}
+.index__sub li::before { content: '—'; opacity: var(--opacity-dim); }
+
+@media (max-width: 900px) {
+  .index__row { grid-template-columns: 40px minmax(0, 1fr); }
+  .index__sub { grid-column: 2; }
+}
+
+/* --------------------------------------------------------------------------
+   FEATURE CARD / OVERLAY IMAGE FRAME
+   Immagine con raggio 32px in alto, 20px di padding, nessun bordo,
+   nessuna ombra, raggio card 0px. L'immagine è la superficie.
+   -------------------------------------------------------------------------- */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-18);
+  border-radius: var(--radius-cards);
+}
+
+.card__media {
+  border-radius: var(--radius-images);
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  background: var(--surface-deep-section);
+}
+.card__media img { width: 100%; height: 100%; object-fit: cover; }
+
+.card__body { display: flex; flex-direction: column; gap: var(--spacing-6); }
+.card__meta { opacity: var(--opacity-dim); }
+
+.card__title {
+  font-size: var(--text-subheading);
+  line-height: var(--leading-subheading);
+  letter-spacing: var(--tracking-subheading);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Il link copre la card: hover solo sul titolo, nessun movimento */
+a.card { transition: opacity 150ms linear; }
+a.card:hover .card__title { text-decoration: underline; text-underline-offset: 4px; }
+
+/* --------------------------------------------------------------------------
+   SPLIT — testo e Overlay Image Frame affiancati
+   -------------------------------------------------------------------------- */
+
+.split {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-72);
+  align-items: center;
+}
+.split__body { display: flex; flex-direction: column; gap: var(--spacing-20); align-items: flex-start; }
+.split__media img {
+  width: 100%;
+  border-radius: var(--radius-images);
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .split { grid-template-columns: 1fr; gap: var(--spacing-36); }
+  .split__media { order: -1; }
+}
+
+/* --------------------------------------------------------------------------
+   METRICHE
+   Numeri in display weight 300, label in meta 11px uppercase.
+   Nessun fondo, nessuna icona: solo tipo e numero.
+   -------------------------------------------------------------------------- */
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: var(--spacing-18);
+  row-gap: var(--spacing-36);
+  border-top: 1px solid var(--color-bone);
+  padding-top: var(--spacing-36);
+}
+@media (max-width: 900px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+
+.metric { display: flex; flex-direction: column; gap: var(--spacing-10); }
+.metric__value {
+  font-size: var(--text-heading-lg);
+  line-height: var(--leading-heading-lg);
+  letter-spacing: var(--tracking-heading-lg);
+  font-weight: var(--font-weight-light);
+  font-variant-numeric: tabular-nums;
+}
+.metric__label { opacity: var(--opacity-dim); }
+
+/* --------------------------------------------------------------------------
+   FOOTER LINK ROW
+   12px weight 400–500, tracking 0.15em uppercase, gap 20px,
+   nessun divisore, nessun bullet.
+   -------------------------------------------------------------------------- */
+
+.footer {
+  background: var(--surface-ocean-floor);
+  color: var(--color-paper);
+  padding-block: var(--spacing-72) var(--spacing-30);
+}
+
+.footer__top {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: var(--spacing-45);
+  padding-bottom: var(--spacing-45);
+}
+@media (max-width: 900px) { .footer__top { grid-template-columns: 1fr; gap: var(--spacing-36); } }
+
+.footer__brand { display: flex; flex-direction: column; gap: var(--spacing-18); max-width: 38ch; }
+.footer__logo {
+  font-size: var(--text-heading);
+  line-height: 1;
+  letter-spacing: var(--tracking-heading-lg);
+  font-weight: var(--font-weight-light);
+}
+.footer__logo b { font-weight: var(--font-weight-regular); }
+
+.footer__col-title { opacity: var(--opacity-dim); margin-bottom: var(--spacing-18); }
+
+.footer__list { display: flex; flex-direction: column; gap: var(--spacing-14); }
+.footer__list a {
+  font-size: 12px;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--font-weight-regular);
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 150ms linear;
+}
+.footer__list a:hover { color: var(--color-paper); }
+
+.footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-18);
+  padding-top: var(--spacing-30);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.footer__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-20);
+}
+.footer__row a,
+.footer__legal {
+  font-size: 12px;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 150ms linear;
+}
+.footer__row a:hover { color: var(--color-paper); }
+
+
+/* --------------------------------------------------------------------------
+   La pagina contatti: le due colonne partono in alto ma la destra è alta
+   quanto la sinistra. Serve al riepilogo, che resta fermo solo finché ha
+   sotto di sé il proprio contenitore.
+   -------------------------------------------------------------------------- */
+.split--contatti { align-items: stretch; }
+.split--contatti > * { align-self: stretch; }
+
+
+
+/* --------------------------------------------------------------------------
+   LE DUE BANDIERE
+
+   Si vedono tutte e due, e si capisce al primo sguardo quale è accesa:
+   quella della lingua che non stai leggendo è spenta e in scala di grigi.
+   Passandoci sopra torna a colori — che è anche il modo in cui il bottone
+   dice "premendo qui vieni qui".
+
+   Il contorno non lo fa un bordo colorato ma una hairline: una bandiera è
+   già colore, aggiungerne altro la trasformerebbe in un francobollo.
+   -------------------------------------------------------------------------- */
+
+.lingue {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-buttons);
+  /* La barra è trasparente sopra la fotografia e chiara dopo: il contorno
+     segue il colore del testo e funziona in tutti e due i casi. */
+  opacity: 0.9;
+}
+
+.lingua {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-6);
+  padding: 4px var(--spacing-6);
+  border-radius: calc(var(--radius-buttons) - 2px);
+  text-decoration: none;
+  color: inherit;
+  font-size: var(--text-meta);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  transition: background-color 150ms linear, opacity 150ms linear;
+}
+
+.lingua__bandiera {
+  display: block;
+  width: 20px;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 2px;
+  /* Spenta finché non è la lingua attiva: il colore è il segnale, e due
+     bandiere accese non segnalano niente. */
+  filter: grayscale(1);
+  opacity: 0.55;
+  transition: filter 200ms linear, opacity 200ms linear;
+}
+.lingua__bandiera svg { width: 100%; height: 100%; display: block; }
+.lingua__sigla { opacity: 0.65; }
+
+.lingua.is-attiva .lingua__bandiera { filter: none; opacity: 1; }
+.lingua.is-attiva .lingua__sigla { opacity: 1; }
+.lingua.is-attiva { background: color-mix(in srgb, currentColor 12%, transparent); }
+
+.lingua:hover .lingua__bandiera { filter: none; opacity: 1; }
+.lingua:hover .lingua__sigla { opacity: 1; }
+.lingua:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* Nel menu a tutto schermo stanno più larghe: lì c'è spazio e il dito
+   deve avere un bersaglio vero. */
+.nav__panel .lingue { align-self: flex-start; margin-bottom: var(--spacing-10); }
+.nav__panel .lingua { padding: var(--spacing-6) var(--spacing-10); }
+.nav__panel .lingua__bandiera { width: 26px; height: 18px; }
+
+/* Sotto i 900px la barra si riduce all'essenziale: le bandiere restano
+   nel menu, dove c'è posto. */
+@media (max-width: 900px) {
+  .nav__actions > .lingue { display: none; }
+}

@@ -1,0 +1,135 @@
+/* ==========================================================================
+   CORSO ARREDI — LA COPERTINA CHE GIRA
+   Sulle card della home e sulle categorie di Collezioni.
+
+   QUATTRO VERSI, UNA SOLA DISSOLVENZA
+
+   Le card sono sei, tutte visibili insieme. Quello che le tiene insieme è
+   la dissolvenza: uguale per tutte, stessa durata, stessa curva. Sopra la
+   dissolvenza c'è un piccolo spostamento, e l'unica cosa che cambia è il
+   suo verso — da sotto, da sopra, da sinistra, da destra.
+
+   Il verso non appartiene alla card: glielo dice il coro (js/coro.js) a
+   ogni giro, ed è lo stesso verso in cui si muove la linea immaginaria che
+   le sta attraversando. Se la linea corre verso destra, tutte e sei
+   ricevono "da-sinistra" e la fotografia nuova entra dal lato da cui la
+   linea arriva. È questo che fa leggere sei cambi vicini come una cosa
+   sola che attraversa la pagina.
+
+   PERCHÉ QUATTRO E NON SEI
+
+   Prima i movimenti erano sei, uno fisso per card, e tre non avevano un
+   verso: "tenda" e "apre" erano ritagli, "avvicina" era una scala. Vanno
+   benissimo da soli e non vanno da nessuna parte — quindi non possono
+   stare dentro una linea che scorre. Con il coro il verso è tutto, e i tre
+   senza verso sono stati tolti invece di essere lasciati lì inutilizzati.
+
+   Lo spostamento resta piccolo di proposito: su un riquadro alto un quarto
+   di schermo, e con un cambio rapido, un movimento ampio non si legge come
+   un movimento ma come uno scatto.
+   ========================================================================== */
+
+.copertina {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-bone);
+
+  /* Le durate arrivano da js/copertina.js, che le scrive sul riquadro: un
+     numero solo, in un posto solo. I valori qui sono la rete se il foglio
+     viene usato senza il suo script. */
+  --copertina-cambio: 640ms;
+  --copertina-vita: 4440ms;
+
+  /* La curva di tutti gli accenti. Una sola, dichiarata una volta: se sei
+     movimenti condividono la curva si leggono come sei facce dello stesso
+     gesto, anche quando vanno in direzioni opposte. */
+  --copertina-curva: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.copertina__foto {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity   var(--copertina-cambio) linear,
+    transform var(--copertina-cambio) var(--copertina-curva);
+}
+
+/* --------------------------------------------------------------------------
+   IL FONDO COMUNE: LA DISSOLVENZA
+
+   Vale per tutte e sei. Quella che entra parte trasparente, quella che esce
+   finisce trasparente. Da qui in giù si aggiunge solo l'accento.
+   -------------------------------------------------------------------------- */
+
+.copertina__foto.is-entra { opacity: 0; }
+.copertina__foto.is-esce  { opacity: 0; }
+
+/* --------------------------------------------------------------------------
+   I QUATTRO VERSI
+
+   Il nome dice da dove arriva la fotografia nuova, non dove va: è il modo
+   in cui il coro li chiede, perché quello che decide è da che parte sta
+   arrivando la linea.
+
+   La nuova entra da un lato e si posa; la vecchia continua nella stessa
+   direzione e se ne va — un po' meno, perché sta uscendo e non deve
+   prendersi l'attenzione. Le due insieme fanno un movimento solo che
+   attraversa il riquadro.
+   -------------------------------------------------------------------------- */
+
+/* La linea corre verso destra: la fotografia entra dal bordo sinistro */
+.copertina--da-sinistra .copertina__foto.is-entra { transform: translateX(-9%); }
+.copertina--da-sinistra .copertina__foto.is-esce  { transform: translateX(6%); }
+
+/* La linea corre verso sinistra */
+.copertina--da-destra .copertina__foto.is-entra { transform: translateX(9%); }
+.copertina--da-destra .copertina__foto.is-esce  { transform: translateX(-6%); }
+
+/* La linea sale */
+.copertina--da-sotto .copertina__foto.is-entra { transform: translateY(8%); }
+.copertina--da-sotto .copertina__foto.is-esce  { transform: translateY(-5%); }
+
+/* La linea scende */
+.copertina--da-sopra .copertina__foto.is-entra { transform: translateY(-8%); }
+.copertina--da-sopra .copertina__foto.is-esce  { transform: translateY(5%); }
+
+/* --------------------------------------------------------------------------
+   IL RESPIRO
+
+   Mentre è ferma, la fotografia si avvicina dell'1,8%. Serve a non lasciare
+   immobile una card che non ha ancora cambiato immagine.
+
+   Dura quanto la vita di una fotografia — permanenza più dissolvenza — e
+   non torna indietro: quando la successiva la sostituisce, questa si stava
+   ancora avvicinando, e il movimento non si vede mai fermarsi. Prima erano
+   dodici secondi contro cinque di permanenza: il respiro veniva tagliato a
+   metà strada, sempre nello stesso punto.
+   -------------------------------------------------------------------------- */
+
+.copertina__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: copertina-respiro var(--copertina-vita) linear both;
+}
+@keyframes copertina-respiro {
+  from { transform: scale(1); }
+  to   { transform: scale(1.018); }
+}
+
+/* --------------------------------------------------------------------------
+   I contenitori che la ospitano diventano il suo riquadro
+   -------------------------------------------------------------------------- */
+
+.card__media,
+.category__media { position: relative; overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  .copertina__foto { transition: none; }
+  .copertina__foto img { animation: none; }
+}
