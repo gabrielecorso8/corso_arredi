@@ -62,12 +62,10 @@ window.SITE_IT = {
     label: "Progettazione su misura dal 1969 · Settimo di Pescantina",
     title: "Interni su misura,<br>dal disegno alla posa.",
     lede: "Tre generazioni fra studio di progettazione e falegnameria. Ascoltiamo lo spazio e chi lo vive, poi disegniamo, costruiamo e installiamo: un interlocutore solo, dal primo sopralluogo all'assistenza.",
-    /* Le fotografie stanno in fondo a questo file, in fotoStudio: sono
-       le stesse che si vedono nello Studio, e un elenco solo è un elenco
-       che non può disallinearsi. image e imageAlt restano come rete, per
-       il caso in cui il JavaScript non parta. */
-    image: "assets/img/studio/01.jpg",
-    imageAlt: "Lo Studio di Corso Arredi visto dal soggiorno: soffitto a travi di legno lamellare, anello luminoso sospeso e la cucina sullo sfondo",
+    /* Immagine orizzontale dedicata all'hero, con più pixel della serie
+       verticale dello Studio e già in proporzione alla schermata. */
+    image: "assets/img/hero-living.jpg",
+    imageAlt: "Soggiorno contemporaneo con parete attrezzata in legno, illuminazione integrata e ampie vetrate",
     actions: [
       { label: "Collezioni", href: "collezioni.html" },
       { label: "Eventi", href: "eventi.html" }

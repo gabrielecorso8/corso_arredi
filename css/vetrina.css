@@ -116,25 +116,3 @@
   .vetrina__foto img { animation: none; }
   .vetrina__did { animation: none; }
 }
-
-/* ==========================================================================
-   LA VETRINA COME SFONDO DELL'HERO
-
-   Stesso componente, altro mestiere: qui non è un riquadro accanto al testo,
-   è il fondo su cui il testo sta. Quindi niente proporzione dichiarata —
-   riempie quello che le viene dato — niente didascalia e niente puntini: la
-   prima schermata deve avere una cosa sola da leggere, e quella è il titolo.
-
-   La durata della dissolvenza arriva da JavaScript come variabile, perché
-   qui e nello Studio è diversa e il valore vive in un posto solo.
-   ========================================================================== */
-
-.vetrina--hero { position: absolute; inset: 0; gap: 0; }
-.vetrina--hero .vetrina__palco {
-  position: absolute;
-  inset: 0;
-  aspect-ratio: auto;
-  border-radius: 0;
-  background: var(--surface-ocean-floor);
-}
-.vetrina__foto { transition-duration: var(--vetrina-cambio, 900ms); }

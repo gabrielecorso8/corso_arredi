@@ -95,42 +95,13 @@
         })
       ])));
 
-    /* La prima schermata non è più una fotografia sola: sono le stesse
-       fotografie dello Studio che si alternano, ma con un'andatura più
-       lenta di là. Qui il visitatore sta leggendo il titolo e decidendo
-       se restare — un'immagine che cambia mentre legge lo interrompe.
-
-       Quante siano lo decide la cartella assets/img/studio, non un elenco
-       scritto: aggiungendo un file compare un posto in più, togliendolo il
-       posto sparisce con lui.
-
-       Se la vetrina non c'è, o se la cartella è vuota, resta la fotografia
-       di riserva: la prima schermata non può mai essere un buco nero. */
-    const sfondo = (window.CAVetrina && S.fotoStudio && S.fotoStudio.cartella)
-      ? window.CAVetrina.costruisci(S.fotoStudio, U('studio.vetrinaHome'), {
-          classe: 'vetrina--hero',
-          tempo: 6000,
-          cambio: 1300,
-          didascalia: false,
-          punti: false,
-          /* Sul fondo di tutta la schermata il puntatore ci sta sopra
-             quasi sempre: fermarsi al suo passaggio significherebbe
-             restare fermi. */
-          pausaSuHover: false,
-          /* La foto riempie davvero l'intera schermata: indicare una
-             larghezza minore faceva scegliere al browser una variante
-             troppo piccola per l'hero. */
-          sizes: '100vw',
-          riserva: { image: h.image, imageAlt: h.imageAlt }
-        })
-      : img(h.image, h.imageAlt, true);
+    /* L'hero usa la fotografia orizzontale dedicata, più definita e già
+       proporzionata allo schermo. La galleria dello Studio resta nella
+       pagina dedicata; qui la foto rimane ferma mentre si legge. */
+    const sfondo = img(h.image, h.imageAlt, true);
 
     m.replaceWith(el('section', { class: 'hero' }, [
       el('div', { class: 'hero__media' }, [sfondo]),
-      /* Il pannello che sfoca il lato sinistro. Sta sopra la fotografia e
-         sotto il testo, e sfoca quello che ha dietro qualunque cosa sia:
-         funziona da solo mentre le fotografie si alternano. */
-      el('div', { class: 'hero__sfoca', 'aria-hidden': 'true' }),
       el('div', { class: 'container hero__content' }, [
         el('p', { class: 't-meta hero__label', style: '--i:0', text: h.label }),
         titolo,

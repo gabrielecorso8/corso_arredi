@@ -312,64 +312,6 @@
 .hero__media { position: absolute; inset: 0; }
 .hero__media img { width: 100%; height: 100%; object-fit: cover; }
 
-/* --------------------------------------------------------------------------
-   LA SFOCATURA A SINISTRA
-
-   La fotografia copre tutta la schermata. Sulla sinistra, fin dove comincia
-   il testo, viene sfocata e portata al pieno: il titolo non sta su un
-   dettaglio a fuoco ma su una superficie calma, e il passaggio fra le due
-   cose non ha un bordo.
-
-   Non è una seconda copia della fotografia sfocata. È un pannello che
-   sfoca quello che ha dietro — backdrop-filter — quindi funziona da solo
-   anche mentre le fotografie si alternano, senza raddoppiare le immagini
-   caricate. Sopra alla sfocatura c'è il colore di fondo, pieno al bordo e
-   via via trasparente: è quello che rende "opaco a sinistra".
-
-   Le misure, su una finestra da 1440:
-
-     0 → 115 px      pieno, il titolo comincia qui sopra
-     115 → 400 px    la sfocatura si dirada
-     oltre           fotografia a fuoco
-
-   Prima qui c'era una maschera che faceva sparire la fotografia sulla
-   sinistra. Faceva il suo lavoro ma buttava via mezza immagine: adesso la
-   fotografia c'è tutta, e a sinistra è semplicemente fuori fuoco.
-   -------------------------------------------------------------------------- */
-
-.hero__sfoca {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 42%;
-  z-index: 1;
-  -webkit-backdrop-filter: blur(22px) saturate(0.92);
-  backdrop-filter: blur(22px) saturate(0.92);
-  background: linear-gradient(90deg,
-    var(--surface-ocean-floor) 0%,
-    rgba(3, 30, 37, 0.86) 19%,
-    rgba(3, 30, 37, 0.42) 48%,
-    rgba(3, 30, 37, 0) 100%);
-  /* La sfocatura stessa si dissolve verso destra: senza, il pannello
-     finirebbe con una linea netta in mezzo alla fotografia. */
-  -webkit-mask-image: linear-gradient(90deg,
-    rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 42%, rgba(0, 0, 0, 0) 100%);
-  mask-image: linear-gradient(90deg,
-    rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 42%, rgba(0, 0, 0, 0) 100%);
-  pointer-events: none;
-}
-
-/* Dove la sfocatura non è supportata non serve una regola alternativa: il
-   gradiente qui sopra fa già da solo il mestiere principale — portare al
-   pieno il lato sinistro. Si perde la sfocatura, non la leggibilità, e non
-   c'è una seconda versione da tenere allineata alla prima. */
-
-@media (max-width: 700px) {
-  /* Su telefono il titolo parte quasi dal bordo e la schermata è stretta:
-     una fascia larga il 42% mangerebbe metà fotografia. Si allarga e si
-     appoggia soprattutto sul fondo scuro, che lì fa già il lavoro. */
-  .hero__sfoca { width: 62%; }
-}
-
 /* Scrim obbligatorio: il design system vieta testo diretto su fotografia
    senza overlay di scurimento.
 

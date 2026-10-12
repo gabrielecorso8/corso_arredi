@@ -535,16 +535,12 @@ html {
    regola sola: niente si muove per farsi guardare. Ogni movimento è la
    conseguenza visiva di qualcosa che sta arrivando o che se ne sta andando.
 
-   Quattro tempi, in ordine:
+   Tre tempi, in ordine:
 
-     1. un bordo solo attraversa lo schermo da destra verso sinistra e si
-        lascia dietro la fotografia, e nell'ultimo tratto la sfumatura del
-        lato sinistro: non sono due animazioni vicine, è lo stesso
-        ritaglio che scopre tutte e due;
+     1. un bordo attraversa la fotografia da destra verso sinistra;
      2. le righe del titolo salgono da dietro il proprio bordo, una dopo
         l'altra, come fogli che si impilano;
-     3. la fotografia continua a respirare, lentissima e senza fine;
-     4. scorrendo, tutto si congeda invece di sparire di colpo.
+     3. scorrendo, il testo si congeda invece di sparire di colpo.
 
    Tutto composto dalla scheda grafica: nessun ridisegno, nessun costo.
    Togliendo questo foglio la home resta esattamente com'era prima —
@@ -585,39 +581,6 @@ html {
     to   { clip-path: inset(0 0 0 0); }
   }
 
-  /* LA SFOCATURA È IL BORDO CHE SCOPRE, NON UNA COSA CHE ARRIVA DOPO
-
-     Prima il pannello sfocato compariva per conto suo: partiva a metà
-     apertura, saliva di quattordici pixel e passava da trasparente a
-     pieno. Erano due animazioni diverse una accanto all'altra — la
-     fotografia che si scopriva e, poco dopo, un pannello che si accendeva
-     sopra. Lo stacco che si vedeva era esattamente quello: due gesti dove
-     ne serviva uno.
-
-     Adesso il pannello è scoperto dallo stesso bordo che scopre la
-     fotografia. Stesso ritaglio, stessa durata, stessa curva, nessun
-     ritardo: il bordo attraversa lo schermo una volta sola e si lascia
-     dietro prima la fotografia e poi, nell'ultimo tratto, la sfumatura.
-     Non c'è un momento in cui qualcosa si accende, perché non c'è niente
-     che si accenda.
-
-     I 195%: il bordo parte dall'82% della larghezza dell'hero, e il
-     pannello è largo il 42%. In coordinate del pannello quell'82% sta a
-     82/42 = 195%. Sotto i 700px il pannello è largo il 62% e lo stesso
-     conto dà 132%. Sono le due sole cifre da rifare se un giorno cambia
-     la larghezza della sfumatura. */
-  .hero__sfoca {
-    --fronte: 195%;
-    animation: ca-svela-fronte var(--apertura) var(--ease-posa) both;
-  }
-  @media (max-width: 700px) {
-    .hero__sfoca { --fronte: 132%; }
-  }
-  @keyframes ca-svela-fronte {
-    from { clip-path: inset(0 0 0 var(--fronte)); }
-    to   { clip-path: inset(0 0 0 0); }
-  }
-
   /* --- 2. il titolo sale riga per riga ------------------------------- */
 
   .hero__riga { display: block; overflow: hidden; }
@@ -648,18 +611,7 @@ html {
     to   { opacity: 1; transform: none; }
   }
 
-  /* --- 3. le fotografie restano alla loro risoluzione --------------- */
-
-  /* Le immagini dello Studio misurano 1086 × 1448 px. Il vecchio
-     avvicinamento del 5% le ingrandiva ancora dentro un hero full-screen,
-     rendendo evidente la morbidezza. Manteniamo la dissolvenza fra scatti,
-     ma senza zoom: l'immagine resta ferma e più nitida. */
-  .hero .vetrina__foto img {
-    animation: none;
-    transform: none;
-  }
-
-  /* --- 4. il congedo allo scorrimento -------------------------------- */
+  /* --- 3. il congedo allo scorrimento -------------------------------- */
 
   @supports (animation-timeline: view()) {
     /* Scorrendo, il testo dell'hero si alza e si spegne prima di uscire

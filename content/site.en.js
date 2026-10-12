@@ -67,8 +67,8 @@ window.SITE_EN = {
     label: "Bespoke design since 1969 · Settimo di Pescantina, Verona",
     title: "Bespoke interiors,<br>from drawing to installation.",
     lede: "Three generations between a design studio and a cabinetmaking workshop. We listen to the space and to the people who live in it, then we draw, build and install: one point of contact, from the first survey to the aftercare.",
-    image: "assets/img/studio/01.jpg",
-    imageAlt: "The Corso Arredi studio seen from the living area: laminated timber beams, a suspended ring light and the kitchen behind",
+    image: "assets/img/hero-living.jpg",
+    imageAlt: "Contemporary living room with a timber media wall, integrated lighting and floor-to-ceiling windows",
     actions: [
       { label: "Collections", href: "collezioni.html" },
       { label: "Events", href: "eventi.html" }
